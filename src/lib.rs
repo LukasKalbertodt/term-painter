@@ -1,48 +1,55 @@
 extern crate term;
 
 use std::default::Default;
-use std::fmt::{Display, Error, Formatter};
+use std::fmt::{Display, Debug, Error, Formatter};
 
-pub trait ToStyle {
-    fn to_style(&self) -> Style;
+/// Everything that can be seen as part of a style. This is the core of this
+/// crate. All functions ("style modifier") consume self and return a modified
+/// version of the style.
+pub trait ToStyle : Clone {
+    fn to_style(self) -> Style;
 
-    fn prepare(&self) -> Result<(), Error> {
-        self.to_style().prepare()
-    }
-
-    fn cleanup(&self) -> Result<(), Error> {
-        self.to_style().cleanup()
-    }
-
-    fn fg(&self, c: Color) -> Style {
+    /// Sets the foreground (text) color.
+    fn fg(self, c: Color) -> Style {
         let mut s = self.to_style();
         s.fg = c;
         s
     }
 
-    fn bg(&self, c: Color) -> Style {
+    /// Sets the background color.
+    fn bg(self, c: Color) -> Style {
         let mut s = self.to_style();
         s.bg = c;
         s
     }
 
-    fn bold(&self) -> Style {
+    /// Makes the text bold.
+    fn bold(self) -> Style {
         let mut s = self.to_style();
         s.bold = true;
         s
     }
 
-    fn underline(&self) -> Style {
+    /// Underlines the text.
+    fn underline(self) -> Style {
         let mut s = self.to_style();
         s.underline = true;
         s
     }
 
-    fn paint<T: Display>(&self, obj: T) -> Painted<T> {
-        Painted { style: self.to_style() , obj: obj }
+    /// Wraps the style specified in `self` and something of arbitrary type
+    /// into a `Painted`. When `Painted` is printed it will print the arbitrary
+    /// something with the given style. `T` needs to implement
+    /// `std::fmt::Display` or `std::fmt::Debug`.
+    fn paint<'a, T: 'a + ?Sized>(&self, obj: &'a T) -> Painted<'a, T> {
+        Painted { style: self.clone().to_style() , obj: obj }
     }
 }
 
+/// Lists all possible Colors. It implements `ToStyle` so it's possible to call
+/// `ToStyle`'s methods direclty on a `Color` variant like:
+///
+/// `println!("{}", Color::Red.bold().paint("Red and bold"));`
 #[derive(Debug, Copy, Clone)]
 pub enum Color {
     Normal,
@@ -57,6 +64,7 @@ pub enum Color {
 }
 
 impl Color {
+    /// Returns the associated constant from `term::color::Color`.
     pub fn term_constant(&self) -> Option<term::color::Color> {
         match *self {
             Color::Normal  => None,
@@ -79,44 +87,39 @@ impl Default for Color {
 }
 
 impl ToStyle for Color {
-    fn to_style(&self) -> Style {
+    /// Returns a Style with default values and the `self` color as foreground
+    /// color.
+    fn to_style(self) -> Style {
         let mut s = Style::default();
-        s.fg = *self;
+        s.fg = self;
         s
     }
 }
 
-// #[derive(Debug, Copy, Clone)]
-// pub enum Attr {
-//     Normal,
-//     Bold,
-//     Underline,
-//     Blink,
-//     Standout,
-//     Reverse,
-//     Secure,
-// }
+/// Lists possible attributes. It implements `ToStyle` so it's possible to call
+/// `ToStyle`'s methods directly on a `Attr` variant like:
+///
+/// `println!("{}", Attr::Bold.fg(Color::Red).paint("Red and bold"));`
+#[derive(Debug, Copy, Clone)]
+pub enum Attr {
+    Bold,
+    Underline,
+}
 
-// impl Attr {
-//     pub fn term_constant(&self) -> Option<term::Attr> {
-//         match *self {
-//             Attr::Normal      => None,
-//             Attr::Bold        => Some(term::Attr::Bold),
-//             Attr::Underline   => Some(term::Attr::Underline(true)),
-//             Attr::Blink       => Some(term::Attr::Blink),
-//             Attr::Standout    => Some(term::Attr::Standout(true)),
-//             Attr::Reverse     => Some(term::Attr::Reverse),
-//             Attr::Secure      => Some(term::Attr::Secure),
-//         }
-//     }
-// }
+impl ToStyle for Attr {
+    /// Returns a Style with default values and the `self` attribute enabled.
+    fn to_style(self) -> Style {
+        let mut s = Style::default();
+        match self {
+            Attr::Bold => s.bold = true,
+            Attr::Underline => s.underline = true,
+        }
+        s
+    }
+}
 
-// impl Default for Attr {
-//     fn default() -> Self {
-//         Attr::Normal
-//     }
-// }
-
+/// Saves all properties of a style. Implements `ToStyle`, so you can call
+/// style modifiers on it.
 #[derive(Debug, Copy, Clone)]
 pub struct Style {
     pub fg: Color,
@@ -137,7 +140,7 @@ impl Default for Style {
 }
 
 impl Style {
-    pub fn prepare(&self) -> Result<(), Error> {
+    fn prepare(&self) -> Result<(), Error> {
         macro_rules! try_term {
             ($e:expr) => ({
                 match $e {
@@ -163,7 +166,7 @@ impl Style {
         Ok(())
     }
 
-    pub fn cleanup(&self) -> Result<(), Error> {
+    fn cleanup(&self) -> Result<(), Error> {
         let mut t = term::stdout().unwrap();
 
         t.reset().unwrap();
@@ -173,17 +176,22 @@ impl Style {
 }
 
 impl ToStyle for Style {
-    fn to_style(&self) -> Style {
-        self.clone()
+    /// Dummy implementation that just returns `self`.
+    fn to_style(self) -> Style {
+        self
     }
 }
 
-pub struct Painted<T: Display> {
+/// Saves a style and a reference to something that will be printed in that
+/// style. That something of type `T` needs to implement either
+/// `std::fmt::Debug` or `std::fmt::Display`
+pub struct Painted<'a, T: 'a + ?Sized> {
     style: Style,
-    obj: T,
+    obj: &'a T,
 }
 
-impl<T: Display> Display for Painted<T> {
+impl<'a, T: Display + 'a + ?Sized> Display for Painted<'a, T> {
+    /// Implementation for `T: Display` -> to print with `{}`.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         try!(self.style.prepare());
         try!(write!(f, "{}", self.obj));
@@ -191,7 +199,11 @@ impl<T: Display> Display for Painted<T> {
     }
 }
 
-
-#[test]
-fn it_works() {
+impl<'a, T: Debug + 'a + ?Sized> Debug for Painted<'a, T> {
+    /// Implementation for `T: Debug` -> to print with `{:?}`.
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        try!(self.style.prepare());
+        try!(write!(f, "{:?}", self.obj));
+        self.style.cleanup()
+    }
 }
