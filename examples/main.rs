@@ -1,10 +1,8 @@
 extern crate term_painter;
 
-use term_painter as painter;
+use term_painter::{Color, ToStyle};
 use std::default::Default;
 
 fn main() {
-  let s = painter::Style::default();
-
-  println!("Hello World {}", s.paint("huhu"));
+  println!("Hello World {}", Color::Red.paint("huhu"));
 }

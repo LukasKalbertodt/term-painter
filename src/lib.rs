@@ -3,6 +3,22 @@ extern crate term;
 use std::default::Default;
 use std::fmt::{Display, Error, Formatter};
 
+pub trait ToStyle {
+    fn to_style(&self) -> Style;
+
+    fn prepare(&self) -> Result<(), Error> {
+        self.to_style().prepare()
+    }
+
+    fn cleanup(&self) -> Result<(), Error> {
+        self.to_style().cleanup()
+    }
+
+    fn paint<T: Display>(&self, obj: T) -> Painted<T> {
+        Painted { style: self.to_style() , obj: obj }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum Color {
     Normal,
@@ -35,6 +51,12 @@ impl Color {
 impl Default for Color {
     fn default() -> Self {
         Color::Normal
+    }
+}
+
+impl ToStyle for Color {
+    fn to_style(&self) -> Style {
+        Style { fg: *self, bg: Color::default(), deco: Decoration::default() }
     }
 }
 
@@ -81,9 +103,11 @@ impl Style {
 
         Ok(())
     }
+}
 
-    pub fn paint<T: Display>(self, obj: T) -> Painted<T> {
-        Painted { style: self, obj: obj }
+impl ToStyle for Style {
+    fn to_style(&self) -> Style {
+        self.clone()
     }
 }
 
