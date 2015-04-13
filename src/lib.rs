@@ -1,3 +1,65 @@
+//! This is a crate for coloring and formatting terminal output. Simple
+//! example:
+//!
+//! ```
+//! extern crate term_painter;
+//!
+//! use term_painter::ToStyle;
+//! use term_painter::Color::*;
+//! use term_painter::Attr::*;
+//!
+//! fn main() {
+//!     println!("{} or {} or {}",
+//!         Red.paint("Red"),
+//!         Bold.paint("Bold"),
+//!         Red.bold().paint("Both!"));
+//! }
+//! ```
+//!
+//! How to use it
+//! -------------
+//! Formatting works in two steps mainly:
+//! 1. Creating a style
+//! 2. Use this style to "paint" something and reviece a `Painted` object
+//!
+//! 1. Creating a style
+//! -------------------
+//! To create a style a startpoint is needed: This can either be a startpoint
+//! with an attached modifier (like `Red`: modifies the fg-color) or the
+//! `Plain` startpoint, which does not modify anything.
+//! After that the startpoint can be modified by modifiers like `bold()` or
+//! `fg()`.
+//!
+//! ```
+//! extern crate term_painter;
+//!
+//! use term_painter::ToStyle;
+//! use term_painter::Color::*;
+//! use term_painter::Attr::*;
+//!
+//! fn main() {
+//!     let x = 5;
+//!
+//!     // These two are equivalent
+//!     println!("{}", x);
+//!     println!("{}", Plain.paint(&x));
+//!
+//!     // These two are equivalent, too
+//!     println!("{}", Red.paint(&x));
+//!     println!("{}", Plain.fg(Red).paint(&x));
+//! }
+//! ```
+//!
+//! So it looks something like this:
+//!
+//! `$start_point`  [`.modifier1(...)`]  [`.modifier2(...)`]  `.paint(...)`
+//!
+//!
+//!
+//!
+//!
+//!
+
 extern crate term;
 
 use std::default::Default;
@@ -41,7 +103,7 @@ pub trait ToStyle : Clone {
     /// into a `Painted`. When `Painted` is printed it will print the arbitrary
     /// something with the given style. `T` needs to implement
     /// `std::fmt::Display` or `std::fmt::Debug`.
-    fn paint<'a, T: 'a + ?Sized>(&self, obj: &'a T) -> Painted<'a, T> {
+    fn paint<T>(&self, obj: T) -> Painted<T> {
         Painted { style: self.clone().to_style() , obj: obj }
     }
 }
@@ -50,7 +112,7 @@ pub trait ToStyle : Clone {
 /// `ToStyle`'s methods direclty on a `Color` variant like:
 ///
 /// `println!("{}", Color::Red.bold().paint("Red and bold"));`
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
     Normal,
     Black,
@@ -65,7 +127,7 @@ pub enum Color {
 
 impl Color {
     /// Returns the associated constant from `term::color::Color`.
-    pub fn term_constant(&self) -> Option<term::color::Color> {
+    fn term_constant(&self) -> Option<term::color::Color> {
         match *self {
             Color::Normal  => None,
             Color::Black   => Some(term::color::BLACK),
@@ -100,8 +162,9 @@ impl ToStyle for Color {
 /// `ToStyle`'s methods directly on a `Attr` variant like:
 ///
 /// `println!("{}", Attr::Bold.fg(Color::Red).paint("Red and bold"));`
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Attr {
+    Plain,
     Bold,
     Underline,
 }
@@ -111,6 +174,7 @@ impl ToStyle for Attr {
     fn to_style(self) -> Style {
         let mut s = Style::default();
         match self {
+            Attr::Plain => {},
             Attr::Bold => s.bold = true,
             Attr::Underline => s.underline = true,
         }
@@ -120,13 +184,14 @@ impl ToStyle for Attr {
 
 /// Saves all properties of a style. Implements `ToStyle`, so you can call
 /// style modifiers on it.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Style {
     pub fg: Color,
     pub bg: Color,
     pub bold: bool,
     pub underline: bool,
 }
+
 
 impl Default for Style {
     fn default() -> Self {
@@ -185,12 +250,12 @@ impl ToStyle for Style {
 /// Saves a style and a reference to something that will be printed in that
 /// style. That something of type `T` needs to implement either
 /// `std::fmt::Debug` or `std::fmt::Display`
-pub struct Painted<'a, T: 'a + ?Sized> {
+pub struct Painted<T> {
     style: Style,
-    obj: &'a T,
+    obj: T,
 }
 
-impl<'a, T: Display + 'a + ?Sized> Display for Painted<'a, T> {
+impl<T: Display> Display for Painted<T> {
     /// Implementation for `T: Display` -> to print with `{}`.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         try!(self.style.prepare());
@@ -199,11 +264,41 @@ impl<'a, T: Display + 'a + ?Sized> Display for Painted<'a, T> {
     }
 }
 
-impl<'a, T: Debug + 'a + ?Sized> Debug for Painted<'a, T> {
+impl<T: Debug> Debug for Painted<T> {
     /// Implementation for `T: Debug` -> to print with `{:?}`.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         try!(self.style.prepare());
         try!(write!(f, "{:?}", self.obj));
         self.style.cleanup()
+    }
+}
+
+
+// ----- Tests ------
+#[cfg(test)]
+mod test {
+    use super::Color::*;
+    use super::Attr::*;
+    use super::ToStyle;
+
+    #[test]
+    fn modifier_order() {
+        // The order of modifiers shouldn't play a role.
+        assert_eq!(Plain.bold().fg(Red), Plain.fg(Red).bold());
+        assert_eq!(Plain.bold().bg(Red), Plain.bg(Red).bold());
+        assert_eq!(Plain.underline().fg(Red), Plain.fg(Red).underline());
+
+        // The startpoints should have the same effect as the modifier.
+        assert_eq!(Red.to_style(), Plain.fg(Red));
+        assert_eq!(Bold.to_style(), Plain.bold());
+    }
+
+    #[test]
+    fn modifier_override() {
+        // The latter modifier should override the one before
+        assert_eq!(Plain.fg(Red).fg(Blue), Plain.fg(Blue));
+        assert_eq!(Plain.fg(Red).fg(Blue), Blue.to_style());
+        assert_eq!(Red.fg(Blue), Plain.fg(Blue));
+        assert_eq!(Red.fg(Blue), Blue.to_style());
     }
 }
