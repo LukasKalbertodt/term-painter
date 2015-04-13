@@ -19,6 +19,7 @@
 //! How to use it
 //! -------------
 //! Formatting works in two steps mainly:
+//!
 //! 1. Creating a style
 //! 2. Use this style to "paint" something and reviece a `Painted` object
 //!
@@ -49,15 +50,49 @@
 //!     println!("{}", Plain.fg(Red).paint(&x));
 //! }
 //! ```
+//! You can chain as many modifier as you want. Every modifier overrides
+//! preceding modifier:
 //!
-//! So it looks something like this:
+//! `println("{}", Plain.fg(Red).fg(Blue).paint("Apple")); // blue, not red`
 //!
-//! `$start_point`  [`.modifier1(...)`]  [`.modifier2(...)`]  `.paint(...)`
+//! 2. Use the style
+//! ----------------
+//! After building the style, you can call `paint` to use it on some object.
+//! `paint` will return the wrapper object `Painted` that holds your object and
+//! the specified style. `Painted` implements `Display` and/or `Debug` if the
+//! type of the given Object, `T`, does. So the `Painted` object can be printed
+//! via `println!` or similar macros. When it gets printed, it will apply the
+//! given style before printing the object of type `T` and will reset the style
+//! after printing.
 //!
+//! `Note`: `paint` will consume the passed object. This is no problem when
+//! passing constant literals (like `paint("cheesecake")`) or types that are
+//! `Copy`. Otherwise it could be confusing because just printing should not
+//! consume a variable. To prevent consuming, just pass a borrow to the object
+//! (with `&`). Example:
 //!
+//! ```
+//! extern crate term_painter;
 //!
+//! use term_painter::ToStyle;
+//! use term_painter::Color::*;
+//! use term_painter::Attr::*;
 //!
+//! fn main() {
+//!     let non_copy = "cake".to_string();  // String is *not* Copy
+//!     let copy = 27;  // usize/isize *is* Copy
 //!
+//!     println!("{}", Plain.paint(&non_copy));
+//!     println!("{}", Plain.paint(&copy));
+//!     // non_copy is still usable here...
+//!     // copy is still usable here...
+//!
+//!     println!("{}", Plain.paint(non_copy));
+//!     println!("{}", Plain.paint(copy));
+//!     // non_copy was moved into paint, so it not usable anymore...
+//!     // copy is still usable here...
+//! }
+//! ```
 //!
 
 extern crate term;

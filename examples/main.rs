@@ -3,7 +3,6 @@ extern crate term_painter;
 use term_painter::ToStyle;
 use term_painter::Color::*;
 use term_painter::Attr::*;
-use std::default::Default;
 
 #[derive(Debug)]
 struct Foo {
