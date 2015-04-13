@@ -14,6 +14,30 @@ pub trait ToStyle {
         self.to_style().cleanup()
     }
 
+    fn fg(&self, c: Color) -> Style {
+        let mut s = self.to_style();
+        s.fg = c;
+        s
+    }
+
+    fn bg(&self, c: Color) -> Style {
+        let mut s = self.to_style();
+        s.bg = c;
+        s
+    }
+
+    fn bold(&self) -> Style {
+        let mut s = self.to_style();
+        s.bold = true;
+        s
+    }
+
+    fn underline(&self) -> Style {
+        let mut s = self.to_style();
+        s.underline = true;
+        s
+    }
+
     fn paint<T: Display>(&self, obj: T) -> Painted<T> {
         Painted { style: self.to_style() , obj: obj }
     }
@@ -56,42 +80,85 @@ impl Default for Color {
 
 impl ToStyle for Color {
     fn to_style(&self) -> Style {
-        Style { fg: *self, bg: Color::default(), deco: Decoration::default() }
+        let mut s = Style::default();
+        s.fg = *self;
+        s
     }
 }
+
+// #[derive(Debug, Copy, Clone)]
+// pub enum Attr {
+//     Normal,
+//     Bold,
+//     Underline,
+//     Blink,
+//     Standout,
+//     Reverse,
+//     Secure,
+// }
+
+// impl Attr {
+//     pub fn term_constant(&self) -> Option<term::Attr> {
+//         match *self {
+//             Attr::Normal      => None,
+//             Attr::Bold        => Some(term::Attr::Bold),
+//             Attr::Underline   => Some(term::Attr::Underline(true)),
+//             Attr::Blink       => Some(term::Attr::Blink),
+//             Attr::Standout    => Some(term::Attr::Standout(true)),
+//             Attr::Reverse     => Some(term::Attr::Reverse),
+//             Attr::Secure      => Some(term::Attr::Secure),
+//         }
+//     }
+// }
+
+// impl Default for Attr {
+//     fn default() -> Self {
+//         Attr::Normal
+//     }
+// }
 
 #[derive(Debug, Copy, Clone)]
-pub enum Decoration {
-    Normal,
-    Bold,
-    Underline
-}
-
-impl Default for Decoration {
-    fn default() -> Self {
-        Decoration::Normal
-    }
-}
-
-#[derive(Debug, Copy, Clone, Default)]
 pub struct Style {
-    fg: Color,
-    bg: Color,
-    deco: Decoration,
+    pub fg: Color,
+    pub bg: Color,
+    pub bold: bool,
+    pub underline: bool,
+}
+
+impl Default for Style {
+    fn default() -> Self {
+        Style {
+            fg: Color::default(),
+            bg: Color::default(),
+            bold: false,
+            underline: false,
+        }
+    }
 }
 
 impl Style {
     pub fn prepare(&self) -> Result<(), Error> {
+        macro_rules! try_term {
+            ($e:expr) => ({
+                match $e {
+                    Ok(true) => {},
+                    _ => { return Err(Error); },
+                }
+            })
+        }
+
         let mut t = term::stdout().unwrap();
 
         match self.fg.term_constant() {
             None => {},
-            Some(c) => { t.fg(c).unwrap(); },
+            Some(c) => { try_term!(t.fg(c)); },
         }
         match self.bg.term_constant() {
             None => {},
-            Some(c) => { t.bg(c).unwrap(); },
+            Some(c) => { try_term!(t.bg(c)); },
         }
+        if self.bold { try_term!(t.attr(term::Attr::Bold)) }
+        if self.underline { try_term!(t.attr(term::Attr::Underline(true))) }
 
         Ok(())
     }
