@@ -12,7 +12,7 @@ println!("{}\n{}\n{}\n{}\n{}",
 It's easy to use and integrates well with `print!` and friends. The main design
 goal was to make it simple. This has one performance disadvantage: It will reset the terminal style after each printing operation. But performance isn't usually hugly important when printing on the terminal, so simplicity is more important.
 
-More examples [here (`examples/main.rs`)](https://github.com/LukasKalbertodt/term-painter/blob/master/examples/main.rs) or in the Documentation.
+More examples [here (`examples/main.rs`)](https://github.com/LukasKalbertodt/term-painter/blob/master/examples/main.rs) or in the [**Documentation**](https://lukaskalbertodt.github.io/term-painter/term_painter/).
 
 ## Collaboration
 Yes please! If you find a bug, have any feature request or anything else: Please open a issue or create a pull request.
