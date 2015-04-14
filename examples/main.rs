@@ -5,8 +5,6 @@ use term_painter::Color::*;
 use term_painter::Attr::*;
 
 fn main() {
-    println!("Size of Style: {} bytes.", std::mem::size_of::<Style>());
-
     simple_examples();
     doc_examples();
 
