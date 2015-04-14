@@ -1,33 +1,65 @@
 extern crate term_painter;
 
-use term_painter::{ToStyle, Color};
+use term_painter::{ToStyle, Color, Style};
 use term_painter::Color::*;
 use term_painter::Attr::*;
 
 fn main() {
+    println!("Size of Style: {} bytes.", std::mem::size_of::<Style>());
+
+    simple_examples();
+    doc_examples();
+
     all_styles(
         &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
     all_styles(
         &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
          BrightMagenta, BrightCyan, BrightWhite]);
+}
 
-  // let x = Foo { bar: "huhu".to_string() };
+fn simple_examples() {
+    println!("{}\n{}\n{}\n{}\n{}",
+        Red.bg(Green).bold().paint("Red-Green-Bold"),
+        Blue.paint("Blue"),
+        Blue.bold().paint("Blue"),
+        Blue.bg(Magenta).paint("Blue"),
+        Normal.underline().paint("Underline"));
+}
 
-  // println!("{:?}", Plain.paint(&x));
-  // println!("{:?}", Plain.paint(x));
+fn doc_examples() {
+    // --- Doc example 1
+    println!("{} or {} or {}",
+        Red.paint("Red"),
+        Bold.paint("Bold"),
+        Red.bold().paint("Both!"));
 
-  // println!("{}\n{}\n{}\n{}\n{}",
-  //   Red.bg(Green).bold().paint("Red-Green-Bold"),
-  //   Blue.paint("Blue"),
-  //   Blue.bold().paint("Blue"),
-  //   Blue.bg(Magenta).paint("Blue"),
-  //   Normal.underline().paint("Underline"));
+    // --- Doc example 2
+    let x = 5;
+
+    // These two are equivalent
+    println!("{}", x);
+    println!("{}", Plain.paint(&x));
+
+    // These two are equivalent, too
+    println!("{}", Red.paint(&x));
+    println!("{}", Plain.fg(Red).paint(&x));
+
+    // --- Doc example 3
+    let non_copy = "cake".to_string();  // String is *not* Copy
+    let copy = 27;  // usize/isize *is* Copy
+
+    println!("{}", Plain.paint(&non_copy));
+    println!("{}", Plain.paint(&copy));
+    // non_copy is still usable here...
+    // copy is still usable here...
+
+    println!("{}", Plain.paint(non_copy));
+    println!("{}", Plain.paint(copy));
+    // non_copy was moved into paint, so it not usable anymore...
+    // copy is still usable here...
 }
 
 fn all_styles(colors: &[Color]) {
-    // let colors =
-    //     [Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White];
-
     // Normal test
     for c in colors { print!("{:?} ", c.paint(c)); }
     println!("    (fg)");
@@ -40,15 +72,34 @@ fn all_styles(colors: &[Color]) {
     for c in colors { print!("{:?} ", Bold.bg(*c).paint(c)); }
     println!("    (bold bg)");
 
+    // Dim text
+    for c in colors { print!("{:?} ", c.dim().paint(c)); }
+    println!("    (dim fg)");
+    for c in colors { print!("{:?} ", Dim.bg(*c).paint(c)); }
+    println!("    (dim bg)");
+
     // Underlined text
     for c in colors { print!("{:?} ", c.underline().paint(c)); }
     println!("    (underline fg)");
     for c in colors { print!("{:?} ", Underline.bg(*c).paint(c)); }
     println!("    (underline bg)");
 
-    // Underlined and bold text
-    for c in colors { print!("{:?} ", c.underline().bold().paint(c)); }
-    println!("    (underline bold fg)");
-    for c in colors { print!("{:?} ", Underline.bg(*c).bold().paint(c)); }
-    println!("    (underline bold bg)");
+    // Blinking text
+    for c in colors { print!("{:?} ", c.blink().paint(c)); }
+    println!("    (blink fg)");
+    for c in colors { print!("{:?} ", Blink.bg(*c).paint(c)); }
+    println!("    (blink bg)");
+
+    // Reverse text
+    for c in colors { print!("{:?} ", c.reverse().paint(c)); }
+    println!("    (reverse fg)");
+    for c in colors { print!("{:?} ", Reverse.bg(*c).paint(c)); }
+    println!("    (reverse bg)");
+
+    // Secure text
+    for c in colors { print!("{:?} ", c.secure().paint(c)); }
+    println!("    (secure fg)");
+    for c in colors { print!("{:?} ", Secure.bg(*c).paint(c)); }
+    println!("    (secure bg)");
+
 }

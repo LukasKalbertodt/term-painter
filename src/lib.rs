@@ -101,6 +101,7 @@ use std::default::Default;
 use std::fmt::{Display, Debug, Error, Formatter};
 use std::cell::RefCell;
 
+
 /// Everything that can be seen as part of a style. This is the core of this
 /// crate. All functions ("style modifier") consume self and return a modified
 /// version of the style.
@@ -128,10 +129,38 @@ pub trait ToStyle : Clone {
         s
     }
 
+    /// Dim mode.
+    fn dim(self) -> Style {
+        let mut s = self.to_style();
+        s.dim = true;
+        s
+    }
+
     /// Underlines the text.
     fn underline(self) -> Style {
         let mut s = self.to_style();
         s.underline = true;
+        s
+    }
+
+    /// Underlines the text.
+    fn blink(self) -> Style {
+        let mut s = self.to_style();
+        s.blink = true;
+        s
+    }
+
+    /// Underlines the text.
+    fn reverse(self) -> Style {
+        let mut s = self.to_style();
+        s.reverse = true;
+        s
+    }
+
+    /// Secure mode.
+    fn secure(self) -> Style {
+        let mut s = self.to_style();
+        s.secure = true;
         s
     }
 
@@ -214,11 +243,18 @@ impl ToStyle for Color {
 /// `ToStyle`'s methods directly on a `Attr` variant like:
 ///
 /// `println!("{}", Attr::Bold.fg(Color::Red).paint("Red and bold"));`
+///
+/// For more information about enum variants, see `term::Attr` Documentation.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Attr {
+    /// Just default style
     Plain,
     Bold,
+    Dim,
     Underline,
+    Blink,
+    Reverse,
+    Secure,
 }
 
 impl ToStyle for Attr {
@@ -228,7 +264,11 @@ impl ToStyle for Attr {
         match self {
             Attr::Plain => {},
             Attr::Bold => s.bold = true,
+            Attr::Dim => s.dim = true,
             Attr::Underline => s.underline = true,
+            Attr::Blink => s.blink = true,
+            Attr::Reverse => s.reverse = true,
+            Attr::Secure => s.secure = true,
         }
         s
     }
@@ -241,7 +281,11 @@ pub struct Style {
     pub fg: Color,
     pub bg: Color,
     pub bold: bool,
+    pub dim: bool,
     pub underline: bool,
+    pub blink: bool,
+    pub reverse: bool,
+    pub secure: bool,
 }
 
 
@@ -251,7 +295,11 @@ impl Default for Style {
             fg: Color::default(),
             bg: Color::default(),
             bold: false,
+            dim: false,
             underline: false,
+            blink: false,
+            reverse: false,
+            secure: false,
         }
     }
 }
@@ -288,6 +336,9 @@ impl Style {
             }
             if self.bold { try_term!(t.attr(term::Attr::Bold)) }
             if self.underline { try_term!(t.attr(term::Attr::Underline(true))) }
+            if self.blink { try_term!(t.attr(term::Attr::Blink)) }
+            if self.reverse { try_term!(t.attr(term::Attr::Reverse)) }
+            if self.secure { try_term!(t.attr(term::Attr::Secure)) }
 
             Ok(())
         })
