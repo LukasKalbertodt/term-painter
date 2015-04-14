@@ -159,6 +159,14 @@ pub enum Color {
     Magenta,
     Cyan,
     White,
+    BrightBlack,
+    BrightRed,
+    BrightGreen,
+    BrightYellow,
+    BrightBlue,
+    BrightMagenta,
+    BrightCyan,
+    BrightWhite,
 }
 
 impl Color {
@@ -174,6 +182,14 @@ impl Color {
             Color::Magenta => Some(term::color::MAGENTA),
             Color::Cyan    => Some(term::color::CYAN),
             Color::White   => Some(term::color::WHITE),
+            Color::BrightBlack   => Some(term::color::BRIGHT_BLACK),
+            Color::BrightRed     => Some(term::color::BRIGHT_RED),
+            Color::BrightGreen   => Some(term::color::BRIGHT_GREEN),
+            Color::BrightYellow  => Some(term::color::BRIGHT_YELLOW),
+            Color::BrightBlue    => Some(term::color::BRIGHT_BLUE),
+            Color::BrightMagenta => Some(term::color::BRIGHT_MAGENTA),
+            Color::BrightCyan    => Some(term::color::BRIGHT_CYAN),
+            Color::BrightWhite   => Some(term::color::BRIGHT_WHITE),
         }
     }
 }
