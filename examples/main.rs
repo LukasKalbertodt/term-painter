@@ -4,11 +4,6 @@ use term_painter::ToStyle;
 use term_painter::Color::*;
 use term_painter::Attr::*;
 
-#[derive(Debug)]
-struct Foo {
-    bar: String
-}
-
 fn main() {
     for _ in 0..10 {
         all_styles();

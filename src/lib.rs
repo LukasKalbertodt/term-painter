@@ -99,6 +99,7 @@ extern crate term;
 
 use std::default::Default;
 use std::fmt::{Display, Debug, Error, Formatter};
+use std::cell::RefCell;
 
 /// Everything that can be seen as part of a style. This is the core of this
 /// crate. All functions ("style modifier") consume self and return a modified
@@ -239,6 +240,10 @@ impl Default for Style {
     }
 }
 
+// static INIT_TERM: Once = ONCE_INIT;
+thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
+    = RefCell::new(term::stdout()));
+
 impl Style {
     fn prepare(&self) -> Result<(), Error> {
         macro_rules! try_term {
@@ -250,28 +255,40 @@ impl Style {
             })
         }
 
-        let mut t = term::stdout().unwrap();
+        TERM.with(|term_opt| {
+            let mut tmut = term_opt.borrow_mut();
+            let mut t = match tmut.as_mut() {
+                None => return Err(Error),
+                Some(t) => t,
+            };
 
-        match self.fg.term_constant() {
-            None => {},
-            Some(c) => { try_term!(t.fg(c)); },
-        }
-        match self.bg.term_constant() {
-            None => {},
-            Some(c) => { try_term!(t.bg(c)); },
-        }
-        if self.bold { try_term!(t.attr(term::Attr::Bold)) }
-        if self.underline { try_term!(t.attr(term::Attr::Underline(true))) }
+            match self.fg.term_constant() {
+                None => {},
+                Some(c) => { try_term!(t.fg(c)); },
+            }
+            match self.bg.term_constant() {
+                None => {},
+                Some(c) => { try_term!(t.bg(c)); },
+            }
+            if self.bold { try_term!(t.attr(term::Attr::Bold)) }
+            if self.underline { try_term!(t.attr(term::Attr::Underline(true))) }
 
-        Ok(())
+            Ok(())
+        })
     }
 
     fn cleanup(&self) -> Result<(), Error> {
-        let mut t = term::stdout().unwrap();
-
-        t.reset().unwrap();
-
-        Ok(())
+        TERM.with(|term_opt| {
+            let mut tmut = term_opt.borrow_mut();
+            match tmut.as_mut() {
+                None => Err(Error),
+                Some(t) =>
+                    match t.reset() {
+                        Ok(true) => Ok(()),
+                        _ => Err(Error),
+                    },
+            }
+        })
     }
 }
 
