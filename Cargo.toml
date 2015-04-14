@@ -7,7 +7,7 @@ description = "Coloring and formatting terminal output"
 documentation = "https://lukaskalbertodt.github.io/term-painter/term_painter/"
 repository = "https://github.com/LukasKalbertodt/term-painter"
 license = "MIT"
-keywords = ["terminal", "term", "color", "painter", "format", "paint"]
+keywords = ["terminal", "color", "format", "paint"]
 
 [dependencies]
 term = "*"
