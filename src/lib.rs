@@ -45,13 +45,11 @@
 //! fn main() {
 //!     let x = 5;
 //!
-//!     // These two are equivalent
-//!     println!("{}", x);
-//!     println!("{}", Plain.paint(&x));
+//!    // These two are equivalent
+//!    println!("{} | {}", x, Plain.paint(x));
 //!
-//!     // These two are equivalent, too
-//!     println!("{}", Red.paint(&x));
-//!     println!("{}", Plain.fg(Red).paint(&x));
+//!    // These two are equivalent, too
+//!    println!("{} | {}", Red.paint(x), Plain.fg(Red).paint(x));
 //! }
 //! ```
 //! You can chain as many modifier as you want. Every modifier overrides
@@ -147,42 +145,42 @@ pub trait ToStyle : Sized {
     /// Makes the text bold.
     fn bold(self) -> Style {
         let mut s = self.to_style();
-        s.bold = true;
+        s.bold = Some(true);
         s
     }
 
     /// Dim mode.
     fn dim(self) -> Style {
         let mut s = self.to_style();
-        s.dim = true;
+        s.dim = Some(true);
         s
     }
 
     /// Underlines the text.
     fn underline(self) -> Style {
         let mut s = self.to_style();
-        s.underline = true;
+        s.underline = Some(true);
         s
     }
 
     /// Underlines the text.
     fn blink(self) -> Style {
         let mut s = self.to_style();
-        s.blink = true;
+        s.blink = Some(true);
         s
     }
 
     /// Underlines the text.
     fn reverse(self) -> Style {
         let mut s = self.to_style();
-        s.reverse = true;
+        s.reverse = Some(true);
         s
     }
 
     /// Secure mode.
     fn secure(self) -> Style {
         let mut s = self.to_style();
-        s.secure = true;
+        s.secure = Some(true);
         s
     }
 
@@ -195,20 +193,23 @@ pub trait ToStyle : Sized {
         Painted { style: self.clone().to_style() , obj: obj }
     }
 
-    // TODO: What should we do with the `Result` returned by prepare and cleanup
+    // TODO: What should we do with the `Result` returned by apply and revert_to
     #[allow(unused_must_use)]
     fn with<F, R>(&self, f: F) -> R
         where F: FnOnce() -> R, Self: Clone {
         let s = self.clone().to_style();
-        s.prepare();
+        let before = CURR_STYLE.with(|curr| curr.borrow().clone());
+        s.apply();
+        CURR_STYLE.with(|curr| *curr.borrow_mut() = before.and(s));
         let out = f();
-        s.cleanup();
+        before.revert_to();
+        CURR_STYLE.with(|curr| *curr.borrow_mut() = before);
         out
     }
 }
 
 /// Lists all possible Colors. It implements `ToStyle` so it's possible to call
-/// `ToStyle`'s methods direclty on a `Color` variant like:
+/// `ToStyle`'s methods directly on a `Color` variant like:
 ///
 /// `println!("{}", Color::Red.bold().paint("Red and bold"));`
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -297,12 +298,12 @@ impl ToStyle for Attr {
         let mut s = Style::default();
         match self {
             Attr::Plain => {},
-            Attr::Bold => s.bold = true,
-            Attr::Dim => s.dim = true,
-            Attr::Underline => s.underline = true,
-            Attr::Blink => s.blink = true,
-            Attr::Reverse => s.reverse = true,
-            Attr::Secure => s.secure = true,
+            Attr::Bold => s.bold = Some(true),
+            Attr::Dim => s.dim = Some(true),
+            Attr::Underline => s.underline = Some(true),
+            Attr::Blink => s.blink = Some(true),
+            Attr::Reverse => s.reverse = Some(true),
+            Attr::Secure => s.secure = Some(true),
         }
         s
     }
@@ -314,12 +315,12 @@ impl ToStyle for Attr {
 pub struct Style {
     pub fg: Color,
     pub bg: Color,
-    pub bold: bool,
-    pub dim: bool,
-    pub underline: bool,
-    pub blink: bool,
-    pub reverse: bool,
-    pub secure: bool,
+    pub bold: Option<bool>,
+    pub dim: Option<bool>,
+    pub underline: Option<bool>,
+    pub blink: Option<bool>,
+    pub reverse: Option<bool>,
+    pub secure: Option<bool>,
 }
 
 
@@ -328,21 +329,24 @@ impl Default for Style {
         Style {
             fg: Color::default(),
             bg: Color::default(),
-            bold: false,
-            dim: false,
-            underline: false,
-            blink: false,
-            reverse: false,
-            secure: false,
+            bold: None,
+            dim: None,
+            underline: None,
+            blink: None,
+            reverse: None,
+            secure: None,
         }
     }
 }
 
 thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
     = RefCell::new(term::stdout()));
+thread_local!(static CURR_STYLE: RefCell<Style>
+    = RefCell::new(Style::default()));
+
 
 impl Style {
-    fn prepare(&self) -> Result<(), Error> {
+    fn apply(&self) -> Result<(), Error> {
         macro_rules! try_term {
             ($e:expr) => ({
                 match $e {
@@ -367,28 +371,53 @@ impl Style {
                 None => {},
                 Some(c) => { try_term!(t.bg(c)); },
             }
-            if self.bold { try_term!(t.attr(term::Attr::Bold)) }
-            if self.underline { try_term!(t.attr(term::Attr::Underline(true))) }
-            if self.blink { try_term!(t.attr(term::Attr::Blink)) }
-            if self.reverse { try_term!(t.attr(term::Attr::Reverse)) }
-            if self.secure { try_term!(t.attr(term::Attr::Secure)) }
+            if self.bold.unwrap_or(false) {
+                try_term!(t.attr(term::Attr::Bold))
+            }
+            match self.underline {
+                Some(u) => try_term!(t.attr(term::Attr::Underline(u))),
+                None => {},
+            }
+            if self.blink.unwrap_or(false) {
+                try_term!(t.attr(term::Attr::Blink))
+            }
+            if self.reverse.unwrap_or(false) {
+                try_term!(t.attr(term::Attr::Reverse))
+            }
+            if self.secure.unwrap_or(false) {
+                try_term!(t.attr(term::Attr::Secure))
+            }
 
             Ok(())
         })
     }
 
-    fn cleanup(&self) -> Result<(), Error> {
-        TERM.with(|term_opt| {
+    // `o` overrides values of `self`
+    fn and(&self, o: Style) -> Style {
+        Style {
+            fg: if o.fg == Color::Normal { self.fg } else { o.fg },
+            bg: if o.bg == Color::Normal { self.bg } else { o.bg },
+            bold: o.bold.or(self.bold),
+            dim: o.dim.or(self.dim),
+            underline: o.underline.or(self.underline),
+            blink: o.blink.or(self.blink),
+            reverse: o.reverse.or(self.reverse),
+            secure: o.secure.or(self.secure),
+        }
+    }
+
+    fn revert_to(&self) -> Result<(), Error> {
+        try!(TERM.with(|term_opt| {
             let mut tmut = term_opt.borrow_mut();
             match tmut.as_mut() {
                 None => Err(Error),
-                Some(t) =>
-                    match t.reset() {
-                        Ok(true) => Ok(()),
-                        _ => Err(Error),
-                    },
+                Some(t) => match t.reset() {
+                    Ok(..) => Ok(()),
+                    Err(..) => Err(Error),
+                },
             }
-        })
+        }));
+        self.apply()
     }
 }
 
@@ -400,8 +429,8 @@ impl ToStyle for Style {
 }
 
 /// Saves a style and a reference to something that will be printed in that
-/// style. That something of type `T` needs to implement either
-/// `std::fmt::Debug` or `std::fmt::Display`
+/// style. That something of type `T` needs to implement at least one of
+/// `std::fmt::Debug` and `std::fmt::Display`.
 pub struct Painted<T> {
     style: Style,
     obj: T,
@@ -410,18 +439,14 @@ pub struct Painted<T> {
 impl<T: Display> Display for Painted<T> {
     /// Implementation for `T: Display` -> to print with `{}`.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        try!(self.style.prepare());
-        try!(write!(f, "{}", self.obj));
-        self.style.cleanup()
+        self.style.with(|| write!(f, "{}", self.obj))
     }
 }
 
 impl<T: Debug> Debug for Painted<T> {
     /// Implementation for `T: Debug` -> to print with `{:?}`.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        try!(self.style.prepare());
-        try!(write!(f, "{:?}", self.obj));
-        self.style.cleanup()
+        self.style.with(|| write!(f, "{:?}", self.obj))
     }
 }
 

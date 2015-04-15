@@ -1,32 +1,38 @@
 extern crate term_painter;
 
-use term_painter::{ToStyle, Color, Style};
+use term_painter::{ToStyle, Color};
 use term_painter::Color::*;
 use term_painter::Attr::*;
 
 fn main() {
-    Red.with(|| {
-        println!("Hallo!");
-        println!("Buh!");
-    });
-
     simple_examples();
+    with_example();
     doc_examples();
 
-    all_styles(
-        &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
-    all_styles(
-        &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
-         BrightMagenta, BrightCyan, BrightWhite]);
+    // all_styles(
+    //     &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
+    // all_styles(
+    //     &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
+    //      BrightMagenta, BrightCyan, BrightWhite]);
 }
 
 fn simple_examples() {
-    println!("{}\n{}\n{}\n{}\n{}",
+    println!("{} | {} | {} | {} | {}",
         Red.bg(Green).bold().paint("Red-Green-Bold"),
         Blue.paint("Blue"),
-        Blue.bold().paint("Blue"),
-        Blue.bg(Magenta).paint("Blue"),
+        Blue.bold().paint("BlueBold"),
+        Blue.bg(Magenta).paint("BlueMagentaBG"),
         Normal.underline().paint("Underline"));
+}
+
+fn with_example() {
+    Red.with(|| {
+        print!("JustRed");
+        Bold.with(|| {
+            print!(" BoldRed {} BoldRed ", Underline.paint("Underline"));
+        });
+        println!("JustRed");
+    });
 }
 
 fn doc_examples() {
@@ -40,12 +46,10 @@ fn doc_examples() {
     let x = 5;
 
     // These two are equivalent
-    println!("{}", x);
-    println!("{}", Plain.paint(&x));
+    println!("{} | {}", x, Plain.paint(x));
 
     // These two are equivalent, too
-    println!("{}", Red.paint(&x));
-    println!("{}", Plain.fg(Red).paint(&x));
+    println!("{} | {}", Red.paint(x), Plain.fg(Red).paint(x));
 
     // --- Doc example 3
     let non_copy = "cake".to_string();  // String is *not* Copy
