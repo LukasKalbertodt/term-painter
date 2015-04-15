@@ -1,6 +1,6 @@
 [package]
 name = "term-painter"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Lukas Kalbertodt <lukas.kalbertodt@gmail.com>"]
 
 description = "Coloring and formatting terminal output"

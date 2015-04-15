@@ -127,7 +127,7 @@ use std::cell::RefCell;
 /// Everything that can be seen as part of a style. This is the core of this
 /// crate. All functions ("style modifier") consume self and return a modified
 /// version of the style.
-pub trait ToStyle : Clone {
+pub trait ToStyle : Sized {
     fn to_style(self) -> Style;
 
     /// Sets the foreground (text) color.
@@ -190,7 +190,8 @@ pub trait ToStyle : Clone {
     /// into a `Painted`. When `Painted` is printed it will print the arbitrary
     /// something with the given style. `T` needs to implement
     /// `std::fmt::Display` or `std::fmt::Debug`.
-    fn paint<T>(&self, obj: T) -> Painted<T> {
+    fn paint<T>(&self, obj: T) -> Painted<T>
+        where Self: Clone {
         Painted { style: self.clone().to_style() , obj: obj }
     }
 }
