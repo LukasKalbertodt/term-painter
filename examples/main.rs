@@ -22,7 +22,7 @@ fn simple_examples() {
         Blue.paint("Blue"),
         Blue.bold().paint("BlueBold"),
         Blue.bg(Magenta).paint("BlueMagentaBG"),
-        Normal.underline().paint("Underline"));
+        Plain.underline().paint("Underline"));
 }
 
 fn with_example() {
