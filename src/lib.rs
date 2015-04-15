@@ -194,6 +194,17 @@ pub trait ToStyle : Sized {
         where Self: Clone {
         Painted { style: self.clone().to_style() , obj: obj }
     }
+
+    // TODO: What should we do with the `Result` returned by prepare and cleanup
+    #[allow(unused_must_use)]
+    fn with<F, R>(&self, f: F) -> R
+        where F: FnOnce() -> R, Self: Clone {
+        let s = self.clone().to_style();
+        s.prepare();
+        let out = f();
+        s.cleanup();
+        out
+    }
 }
 
 /// Lists all possible Colors. It implements `ToStyle` so it's possible to call
@@ -327,7 +338,6 @@ impl Default for Style {
     }
 }
 
-// static INIT_TERM: Once = ONCE_INIT;
 thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
     = RefCell::new(term::stdout()));
 

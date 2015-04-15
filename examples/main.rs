@@ -5,6 +5,11 @@ use term_painter::Color::*;
 use term_painter::Attr::*;
 
 fn main() {
+    Red.with(|| {
+        println!("Hallo!");
+        println!("Buh!");
+    });
+
     simple_examples();
     doc_examples();
 
