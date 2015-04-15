@@ -59,7 +59,9 @@
 //!
 //! 2. Use the style
 //! ----------------
-//! After building the style, you can call `paint` to use it on some object.
+//! After building the style, you can use it in two different ways.
+//!
+//! One way is to call `paint` to use it on some object.
 //! `paint` will return the wrapper object `Painted` that holds your object and
 //! the specified style. `Painted` implements `Display` and/or `Debug` if the
 //! type of the given Object, `T`, does. So the `Painted` object can be printed
@@ -96,6 +98,34 @@
 //! }
 //! ```
 //!
+//! Another way is to call `with`. `with` takes another function (usually a
+//! closure) and everything that is printed within that closure is formatted
+//! with the given style. It can be chained and used together with `paint`.
+//! Inner calls will overwrite outer calls of `with`.
+//!
+//! ```
+//! extern crate term_painter;
+//!
+//! use term_painter::ToStyle;
+//! use term_painter::Color::*;
+//! use term_painter::Attr::*;
+//!
+//! fn main() {
+//!     Red.with(|| {
+//!         print!("JustRed");
+//!         Bold.with(|| {
+//!             print!(" BoldRed {} BoldRed ", Underline.paint("Underline"));
+//!         });
+//!         print!("JustRed ");
+//!
+//!          print!("{}", Blue.paint("Blue (overwrite) "));
+//!          Green.with(|| {
+//!              println!("Green (overwrite)");
+//!          });
+//!     });
+//! }
+//! ```
+//!
 //! Some Notes
 //! ----------
 //! If you don't want to pollute your namespace with `Color` and `Attr` names,
@@ -111,7 +141,21 @@
 //! control characters, Windows and others do not. And since this library uses
 //! the plattform independent library `term`. This was a design choice.
 //!
+//! This crate also assumes that the terminal state is not altered by anything
+//! else. Calling `term` function directly might result in strange behaviour.
+//! This is due to the fact that one can not read the current terminal state.
+//! In order to work like this, this crate needs to track terminal state
+//! itself. However, there shouldn't be any problems when the terminal state
+//! is completely reset in between using those two methods.
 //!
+//! Another possible source of confusion might be multithreading. Terminal
+//! state and handles are hold in thread local variables. If two terminal
+//! handles would reference the same physical terminal, those two threads could
+//! interfere with each other. I have not tested it though.
+//!
+//! Functions of `term` sometimes return a `Result` that is `Err` when the
+//! function fails to set state. However, this crate silently ignores those
+//! failures. To check the capabilities of the terminal, use `term` directly.
 //!
 //!
 
@@ -190,20 +234,28 @@ pub trait ToStyle : Sized {
     /// `std::fmt::Display` or `std::fmt::Debug`.
     fn paint<T>(&self, obj: T) -> Painted<T>
         where Self: Clone {
-        Painted { style: self.clone().to_style() , obj: obj }
+        Painted { style: self.clone().to_style(), obj: obj }
     }
 
-    // TODO: What should we do with the `Result` returned by apply and revert_to
+    /// Executes the given function, applying the style information before
+    /// calling it and resetting after it finished.
     #[allow(unused_must_use)]
     fn with<F, R>(&self, f: F) -> R
         where F: FnOnce() -> R, Self: Clone {
-        let s = self.clone().to_style();
+        // Shorthand for the new style and the style that was active before
+        let new = self.clone().to_style();
         let before = CURR_STYLE.with(|curr| curr.borrow().clone());
-        s.apply();
-        CURR_STYLE.with(|curr| *curr.borrow_mut() = before.and(s));
+
+        // Apply the new style and setting the merged style as CURR_STYLE
+        new.apply();
+        CURR_STYLE.with(|curr| *curr.borrow_mut() = before.and(new));
+
         let out = f();
+
+        // Revert to the style that was active before and set it as current
         before.revert_to();
         CURR_STYLE.with(|curr| *curr.borrow_mut() = before);
+
         out
     }
 }

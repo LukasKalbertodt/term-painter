@@ -9,11 +9,11 @@ fn main() {
     with_example();
     doc_examples();
 
-    // all_styles(
-    //     &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
-    // all_styles(
-    //     &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
-    //      BrightMagenta, BrightCyan, BrightWhite]);
+    all_styles(
+        &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
+    all_styles(
+        &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
+         BrightMagenta, BrightCyan, BrightWhite]);
 }
 
 fn simple_examples() {
@@ -27,12 +27,17 @@ fn simple_examples() {
 
 fn with_example() {
     Red.with(|| {
-        print!("JustRed");
-        Bold.with(|| {
-            print!(" BoldRed {} BoldRed ", Underline.paint("Underline"));
-        });
-        println!("JustRed");
-    });
+         print!("JustRed");
+         Bold.with(|| {
+             print!(" BoldRed {} BoldRed ", Underline.paint("Underline"));
+         });
+         print!("JustRed ");
+
+         print!("{}", Blue.paint("Blue (overwrite) "));
+         Green.with(|| {
+             println!("Green (overwrite)");
+         });
+     });
 }
 
 fn doc_examples() {
