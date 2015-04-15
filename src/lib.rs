@@ -16,6 +16,10 @@
 //! }
 //! ```
 //!
+//! This crate uses `rust-lang/term` to do the formatting. You can of course
+//! use `term` directly, but it's kinda clumsy. Hence this library.
+//!
+//!
 //! How to use it
 //! -------------
 //! Formatting works in two steps mainly:
@@ -93,6 +97,24 @@
 //!     // copy is still usable here...
 //! }
 //! ```
+//!
+//! Some Notes
+//! ----------
+//! If you don't want to pollute your namespace with `Color` and `Attr` names,
+//! you can use a more qualified name (`Color::Red.paint(..)`) and remove these
+//! `use` statements: `use term_painter::Color::*;` and
+//! `use term_painter::Attr::*;`.
+//!
+//! And please note that global state is changed when printing a `Painted`
+//! object. This means that some state is set before and reset after printing.
+//! This means that, for example, using this library in `format!` or `write!`
+//! won't work. The color formatting is not stored in the resulting string.
+//! Although Unix terminals do modify color and formatting by printing special
+//! control characters, Windows and others do not. And since this library uses
+//! the plattform independent library `term`. This was a design choice.
+//!
+//!
+//!
 //!
 
 extern crate term;
