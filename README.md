@@ -29,7 +29,7 @@ Red.with(|| {
 ![alt text](https://raw.githubusercontent.com/LukasKalbertodt/term-painter/master/media/readme_example.png "Result of code snippet above")
 
 It's easy to use and integrates well with `println!`/`print!`. The main design
-goal was to make it simple. This has one performance disadvantage: It will reset the terminal style after each printing operation. But performance isn't usually hugly important when printing on the terminal, so simplicity is more important.
+goal was to make it simple. This has one performance disadvantage: It will often reset the terminal style after each printing operation. But performance isn't usually hugely important when printing on the terminal, so simplicity was more important for the design of this library.
 
 More examples [here (`examples/main.rs`)](https://github.com/LukasKalbertodt/term-painter/blob/master/examples/main.rs) or in the [**Documentation**](https://lukaskalbertodt.github.io/term-painter/term_painter/).
 
