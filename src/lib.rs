@@ -264,6 +264,9 @@ pub trait ToStyle : Sized {
 /// `ToStyle`'s methods directly on a `Color` variant like:
 ///
 /// `println!("{}", Color::Red.bold().paint("Red and bold"));`
+///
+/// Note: Using `Color::Normal` will *not* reset the color to the default
+/// terminal color.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
     Normal,
