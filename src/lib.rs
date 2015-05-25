@@ -272,11 +272,11 @@ pub trait ToStyle : Sized {
 ///
 /// `println!("{}", Color::Red.bold().paint("Red and bold"));`
 ///
-/// Note: Using `Color::Normal` will *not* reset the color to the default
+/// Note: Using `Color::NotSet` will *not* reset the color to the default
 /// terminal color.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
-    Normal,
+    NotSet,
     Black,
     Red,
     Green,
@@ -299,7 +299,7 @@ impl Color {
     /// Returns the associated constant from `term::color::Color`.
     fn term_constant(&self) -> Option<term::color::Color> {
         match *self {
-            Color::Normal  => None,
+            Color::NotSet  => None,
             Color::Black   => Some(term::color::BLACK),
             Color::Red     => Some(term::color::RED),
             Color::Green   => Some(term::color::GREEN),
@@ -322,7 +322,7 @@ impl Color {
 
 impl Default for Color {
     fn default() -> Self {
-        Color::Normal
+        Color::NotSet
     }
 }
 
@@ -520,8 +520,8 @@ impl Style {
             (((by >> 1) & by | !(by >> 1) & bx) & 0b01010101);
 
         Style {
-            fg: if o.fg == Color::Normal { self.fg } else { o.fg },
-            bg: if o.bg == Color::Normal { self.bg } else { o.bg },
+            fg: if o.fg == Color::NotSet { self.fg } else { o.fg },
+            bg: if o.bg == Color::NotSet { self.bg } else { o.bg },
             bold_dim_underline_blink: az,
             reverse_secure: bz,
         }

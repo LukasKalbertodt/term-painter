@@ -12,7 +12,7 @@ fn main() {
     doc_examples();
 
     all_styles(
-        &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
+        &[NotSet, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
     all_styles(
         &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
          BrightMagenta, BrightCyan, BrightWhite]);
