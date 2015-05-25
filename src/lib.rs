@@ -357,6 +357,8 @@ pub enum Attr {
 impl ToStyle for Attr {
     /// Returns a Style with default values and the `self` attribute enabled.
     fn to_style(self) -> Style {
+        // FIXME: Instead of calling the setter method, the bitfields could
+        // be hardcoded here. Should we trust the optimizer?
         let mut s = Style::default();
         match self {
             Attr::Plain => {},
@@ -402,6 +404,8 @@ thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
 thread_local!(static CURR_STYLE: RefCell<Style>
     = RefCell::new(Style::default()));
 
+// Macro to generate getter and setter for all attributes. This hides almost
+// all bit magic in here.
 macro_rules! gen_getter {
     ($getter:ident, $setter:ident, $var:ident, $pos:expr) => {
         pub fn $getter(&self) -> Option<bool> {
@@ -434,7 +438,7 @@ macro_rules! gen_getter {
 }
 
 impl Style {
-
+    // Generate a bunch of getters and setters to hide bit fiddling.
     gen_getter!(get_bold,       set_bold,       bold_dim_underline_blink, 3);
     gen_getter!(get_dim,        set_dim,        bold_dim_underline_blink, 2);
     gen_getter!(get_underline,  set_underline,  bold_dim_underline_blink, 1);
@@ -444,6 +448,7 @@ impl Style {
 
 
     fn apply(&self) -> Result<(), Error> {
+        // Like try!, but also throws when the Result is Ok(false)
         macro_rules! try_term {
             ($e:expr) => ({
                 match $e {
@@ -460,6 +465,7 @@ impl Style {
                 Some(t) => t,
             };
 
+            // Apply colors if set.
             match self.fg.term_constant() {
                 None => {},
                 Some(c) => { try_term!(t.fg(c)); },
@@ -468,6 +474,8 @@ impl Style {
                 None => {},
                 Some(c) => { try_term!(t.bg(c)); },
             }
+
+            // For all attributes: Apply, when set.
             if let Some(true) = self.get_bold() {
                 try_term!(t.attr(term::Attr::Bold));
             }
@@ -493,12 +501,19 @@ impl Style {
 
     // `o` overrides values of `self`
     fn and(&self, o: Style) -> Style {
+        // Some shortcuts for bitfields.
         let ax = self.bold_dim_underline_blink;
         let ay = o.bold_dim_underline_blink;
         let bx = self.reverse_secure;
         let by = o.reverse_secure;
 
-
+        // The following is equivalent to write
+        //     `s.set_attr(o.get_attr().and(self.get_attr()));`
+        // for every attribute. But we can do better with some bit operations.
+        // There are two bits for each attribute: The setbit and valuebit.
+        // The resulting setbit is just an bitwise OR of both input setbits.
+        // The resulting valuebit is either the one of y (if y's set bit is
+        // set) or the one of x (otherwise).
         let az = ((ax | ay) & 0b10101010) |
             (((ay >> 1) & ay | !(ay >> 1) & ax) & 0b01010101);
         let bz = ((bx | by) & 0b10101010) |
