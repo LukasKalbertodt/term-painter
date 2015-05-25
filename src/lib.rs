@@ -189,42 +189,49 @@ pub trait ToStyle : Sized {
     /// Makes the text bold.
     fn bold(self) -> Style {
         let mut s = self.to_style();
-        s.bold = Some(true);
+        s.set_bold(Some(true));
         s
     }
 
     /// Dim mode.
     fn dim(self) -> Style {
         let mut s = self.to_style();
-        s.dim = Some(true);
+        s.set_dim(Some(true));
         s
     }
 
     /// Underlines the text.
     fn underline(self) -> Style {
         let mut s = self.to_style();
-        s.underline = Some(true);
+        s.set_underline(Some(true));
+        s
+    }
+
+    /// Removes underline-attribute.
+    fn not_underline(self) -> Style {
+        let mut s = self.to_style();
+        s.set_underline(Some(false));
         s
     }
 
     /// Underlines the text.
     fn blink(self) -> Style {
         let mut s = self.to_style();
-        s.blink = Some(true);
+        s.set_blink(Some(true));
         s
     }
 
     /// Underlines the text.
     fn reverse(self) -> Style {
         let mut s = self.to_style();
-        s.reverse = Some(true);
+        s.set_reverse(Some(true));
         s
     }
 
     /// Secure mode.
     fn secure(self) -> Style {
         let mut s = self.to_style();
-        s.secure = Some(true);
+        s.set_secure(Some(true));
         s
     }
 
@@ -353,12 +360,12 @@ impl ToStyle for Attr {
         let mut s = Style::default();
         match self {
             Attr::Plain => {},
-            Attr::Bold => s.bold = Some(true),
-            Attr::Dim => s.dim = Some(true),
-            Attr::Underline => s.underline = Some(true),
-            Attr::Blink => s.blink = Some(true),
-            Attr::Reverse => s.reverse = Some(true),
-            Attr::Secure => s.secure = Some(true),
+            Attr::Bold => s.set_bold(Some(true)),
+            Attr::Dim => s.set_dim(Some(true)),
+            Attr::Underline => s.set_underline(Some(true)),
+            Attr::Blink => s.set_blink(Some(true)),
+            Attr::Reverse => s.set_reverse(Some(true)),
+            Attr::Secure => s.set_secure(Some(true)),
         }
         s
     }
@@ -370,12 +377,12 @@ impl ToStyle for Attr {
 pub struct Style {
     pub fg: Color,
     pub bg: Color,
-    pub bold: Option<bool>,
-    pub dim: Option<bool>,
-    pub underline: Option<bool>,
-    pub blink: Option<bool>,
-    pub reverse: Option<bool>,
-    pub secure: Option<bool>,
+    // Each attribute was `Option<bool>` once. To reduce struct size, the
+    // Option type is simulated with 2 bits for each attribute. The first
+    // attribute in the name uses the MSBs, the last attribute the LSBs.
+    // 00 => None, 10 => Some(false), 11 => Some(true)
+    bold_dim_underline_blink: u8,
+    reverse_secure: u8,
 }
 
 
@@ -384,12 +391,8 @@ impl Default for Style {
         Style {
             fg: Color::default(),
             bg: Color::default(),
-            bold: None,
-            dim: None,
-            underline: None,
-            blink: None,
-            reverse: None,
-            secure: None,
+            bold_dim_underline_blink: 0,
+            reverse_secure: 0,
         }
     }
 }
@@ -399,8 +402,47 @@ thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
 thread_local!(static CURR_STYLE: RefCell<Style>
     = RefCell::new(Style::default()));
 
+macro_rules! gen_getter {
+    ($getter:ident, $setter:ident, $var:ident, $pos:expr) => {
+        pub fn $getter(&self) -> Option<bool> {
+            // shift important bits to the right and mask them
+            match (self.$var >> ($pos*2)) & 0b11 {
+                0b10 => Some(false),
+                0b11 => Some(true),
+                _ => None,
+            }
+        }
+
+        pub fn $setter(&mut self, v: Option<bool>) {
+            match v {
+                None => {
+                    // Set important bits to 00
+                    self.$var &= !(0b11 << ($pos*2));
+                },
+                Some(false) => {
+                    // Set important bits to 10
+                    self.$var &= !(0b01 << ($pos*2));
+                    self.$var |= 0b10 << ($pos*2);
+                },
+                Some(true) => {
+                    // Set important bits to 11
+                    self.$var |= 0b11 << ($pos*2);
+                },
+            }
+        }
+    }
+}
 
 impl Style {
+
+    gen_getter!(get_bold,       set_bold,       bold_dim_underline_blink, 3);
+    gen_getter!(get_dim,        set_dim,        bold_dim_underline_blink, 2);
+    gen_getter!(get_underline,  set_underline,  bold_dim_underline_blink, 1);
+    gen_getter!(get_blink,      set_blink,      bold_dim_underline_blink, 0);
+    gen_getter!(get_reverse,    set_reverse,    reverse_secure, 3);
+    gen_getter!(get_secure,     set_secure,     reverse_secure, 2);
+
+
     fn apply(&self) -> Result<(), Error> {
         macro_rules! try_term {
             ($e:expr) => ({
@@ -426,20 +468,22 @@ impl Style {
                 None => {},
                 Some(c) => { try_term!(t.bg(c)); },
             }
-            if self.bold.unwrap_or(false) {
-                try_term!(t.attr(term::Attr::Bold))
+            if let Some(true) = self.get_bold() {
+                try_term!(t.attr(term::Attr::Bold));
             }
-            match self.underline {
-                Some(u) => try_term!(t.attr(term::Attr::Underline(u))),
-                None => {},
+            if let Some(true) = self.get_dim() {
+                try_term!(t.attr(term::Attr::Dim));
             }
-            if self.blink.unwrap_or(false) {
-                try_term!(t.attr(term::Attr::Blink))
+            if let Some(u) = self.get_underline() {
+                try_term!(t.attr(term::Attr::Underline(u)));
             }
-            if self.reverse.unwrap_or(false) {
+            if let Some(true) = self.get_blink() {
+                try_term!(t.attr(term::Attr::Blink));
+            }
+            if let Some(true) = self.get_reverse() {
                 try_term!(t.attr(term::Attr::Reverse))
             }
-            if self.secure.unwrap_or(false) {
+            if let Some(true) = self.get_secure() {
                 try_term!(t.attr(term::Attr::Secure))
             }
 
@@ -449,15 +493,22 @@ impl Style {
 
     // `o` overrides values of `self`
     fn and(&self, o: Style) -> Style {
+        let ax = self.bold_dim_underline_blink;
+        let ay = o.bold_dim_underline_blink;
+        let bx = self.reverse_secure;
+        let by = o.reverse_secure;
+
+
+        let az = ((ax | ay) & 0b10101010) |
+            (((ay >> 1) & ay | !(ay >> 1) & ax) & 0b01010101);
+        let bz = ((bx | by) & 0b10101010) |
+            (((by >> 1) & by | !(by >> 1) & bx) & 0b01010101);
+
         Style {
             fg: if o.fg == Color::Normal { self.fg } else { o.fg },
             bg: if o.bg == Color::Normal { self.bg } else { o.bg },
-            bold: o.bold.or(self.bold),
-            dim: o.dim.or(self.dim),
-            underline: o.underline.or(self.underline),
-            blink: o.blink.or(self.blink),
-            reverse: o.reverse.or(self.reverse),
-            secure: o.secure.or(self.secure),
+            bold_dim_underline_blink: az,
+            reverse_secure: bz,
         }
     }
 
@@ -511,7 +562,7 @@ impl<T: Debug> Debug for Painted<T> {
 mod test {
     use super::Color::*;
     use super::Attr::*;
-    use super::ToStyle;
+    use super::{ToStyle, Style};
 
     #[test]
     fn modifier_order() {
@@ -532,5 +583,19 @@ mod test {
         assert_eq!(Plain.fg(Red).fg(Blue), Blue.to_style());
         assert_eq!(Red.fg(Blue), Plain.fg(Blue));
         assert_eq!(Red.fg(Blue), Blue.to_style());
+    }
+
+    #[test]
+    fn style_and() {
+        let s1 = Style::default().bold().not_underline();
+        let s2 = Style::default().underline();
+        let s3 = Style::default().bold();
+
+        let r1 = Style::default().bold().underline();
+        let r2 = Style::default().bold().not_underline();
+
+        assert_eq!(s2.and(s1), r2);
+        assert_eq!(s2.and(s1).and(s3), r2);
+        assert_eq!(s2.and(s3), r1);
     }
 }
