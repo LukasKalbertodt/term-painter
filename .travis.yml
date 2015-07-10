@@ -1,5 +1,11 @@
 language: rust
 rust:
-  - nightly
-  - beta
   - stable
+  - beta
+  - nightly
+after_success:
+  - |
+        test ${TRAVIS_PULL_REQUEST} == "false" && \
+        test ${TRAVIS_BRANCH} == "master" && \
+        test "${TRAVIS_BUILD_NUMBER}.1" == "${TRAVIS_JOB_NUMBER}" && \
+        bash deploy.sh
