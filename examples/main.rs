@@ -5,15 +5,25 @@ use term_painter::Color::*;
 use term_painter::Attr::*;
 
 fn main() {
+    struct_sizes();
+
     simple_examples();
     with_example();
     doc_examples();
 
     all_styles(
-        &[Normal, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
+        &[NotSet, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White]);
     all_styles(
         &[BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue,
          BrightMagenta, BrightCyan, BrightWhite]);
+}
+
+fn struct_sizes() {
+    use std::mem::size_of;
+
+    println!("size_of(Style): {}", size_of::<term_painter::Style>());
+    println!("size_of(Color): {}", size_of::<Color>());
+    println!("size_of(Attr):  {}", size_of::<term_painter::Attr>());
 }
 
 fn simple_examples() {
