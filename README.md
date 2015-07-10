@@ -1,6 +1,9 @@
 # Coloring terminal ouput
-[![Build Status](https://travis-ci.org/LukasKalbertodt/term-painter.svg?branch=master)](https://travis-ci.org/LukasKalbertodt/term-painter)
+[![Build Status](https://img.shields.io/travis/LukasKalbertodt/term-painter/master.svg)](https://travis-ci.org/LukasKalbertodt/term-painter)
 [![crates.io version](https://img.shields.io/crates/v/term-painter.svg)](https://crates.io/crates/term-painter)
+[![GitHub license](https://img.shields.io/github/license/LukasKalbertodt/term-painter.svg)]()
+
+[**Documentation**](https://lukaskalbertodt.github.io/term-painter/term_painter/)
 
 `term-painter` is a Rust library for coloring and formatting terminal output. It provides easy ways to format various things and uses the crate `rust-lang/term` to do the actual formatting. Example:
 
