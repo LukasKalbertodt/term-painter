@@ -63,11 +63,11 @@
 //!
 //! One way is to call `paint` to use it on some object.
 //! `paint` will return the wrapper object `Painted` that holds your object and
-//! the specified style. `Painted` implements `Display` and/or `Debug` if the
-//! type of the given Object, `T`, does. So the `Painted` object can be printed
-//! via `println!` or similar macros. When it gets printed, it will apply the
-//! given style before printing the object of type `T` and will reset the style
-//! after printing.
+//! the specified style. `Painted` implements any formatting trait (like
+//! `Display` and `Debug`) if and only if the type of the given Object, `T`,
+//! does. So a `Painted` object can be printed via `println!` or similar macros.
+//! When it gets printed, it will apply the given style before printing the
+//! object of type `T` and will reset the style after printing.
 //!
 //! `Note`: `paint` will consume the passed object. This is no problem when
 //! passing constant literals (like `paint("cheesecake")`) or types that are
@@ -162,7 +162,7 @@
 extern crate term;
 
 use std::default::Default;
-use std::fmt::{Display, Debug, Error, Formatter};
+use std::fmt::{self, Error, Formatter};
 use std::cell::RefCell;
 
 
@@ -237,8 +237,7 @@ pub trait ToStyle : Sized {
 
     /// Wraps the style specified in `self` and something of arbitrary type
     /// into a `Painted`. When `Painted` is printed it will print the arbitrary
-    /// something with the given style. `T` needs to implement
-    /// `std::fmt::Display` or `std::fmt::Debug`.
+    /// something with the given style.
     fn paint<T>(&self, obj: T) -> Painted<T>
         where Self: Clone {
         Painted { style: self.clone().to_style(), obj: obj }
@@ -549,27 +548,34 @@ impl ToStyle for Style {
     }
 }
 
-/// Saves a style and a reference to something that will be printed in that
-/// style. That something of type `T` needs to implement at least one of
-/// `std::fmt::Debug` and `std::fmt::Display`.
+/// Wraps an object of type `T` and a style. When attempting to print it, the
+/// given style is applied before printing and reset afterwards.
+/// All formatting traits (`Display`, `Debug`, ...) that are implemented
+/// for `T` are also implemented the wrapper type `Painted<T>`.
 pub struct Painted<T> {
     style: Style,
     obj: T,
 }
 
-impl<T: Display> Display for Painted<T> {
-    /// Implementation for `T: Display` -> to print with `{}`.
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        self.style.with(|| write!(f, "{}", self.obj))
+macro_rules! impl_format {
+    ($symbol:expr, $fmt:ident) => {
+        impl<T: fmt::$fmt> fmt::$fmt for Painted<T> {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                self.style.with(|| write!(f, $symbol, self.obj))
+            }
+        }
     }
 }
 
-impl<T: Debug> Debug for Painted<T> {
-    /// Implementation for `T: Debug` -> to print with `{:?}`.
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        self.style.with(|| write!(f, "{:?}", self.obj))
-    }
-}
+impl_format!("{}", Display);
+impl_format!("{:?}", Debug);
+impl_format!("{:o}", Octal);
+impl_format!("{:x}", LowerHex);
+impl_format!("{:X}", UpperHex);
+impl_format!("{:p}", Pointer);
+impl_format!("{:b}", Binary);
+impl_format!("{:e}", LowerExp);
+impl_format!("{:E}", UpperExp);
 
 
 // ----- Tests ------
