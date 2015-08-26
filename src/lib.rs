@@ -561,7 +561,7 @@ macro_rules! impl_format {
     ($symbol:expr, $fmt:ident) => {
         impl<T: fmt::$fmt> fmt::$fmt for Painted<T> {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-                self.style.with(|| write!(f, $symbol, self.obj))
+                self.style.with(|| fmt::$fmt::fmt(&self.obj, f))
             }
         }
     }
