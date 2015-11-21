@@ -292,6 +292,7 @@ pub enum Color {
     BrightMagenta,
     BrightCyan,
     BrightWhite,
+    Custom(u16),
 }
 
 impl Color {
@@ -315,6 +316,7 @@ impl Color {
             Color::BrightMagenta => Some(term::color::BRIGHT_MAGENTA),
             Color::BrightCyan    => Some(term::color::BRIGHT_CYAN),
             Color::BrightWhite   => Some(term::color::BRIGHT_WHITE),
+            Color::Custom(c)     => Some(c)
         }
     }
 }
