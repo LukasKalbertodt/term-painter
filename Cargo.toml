@@ -10,4 +10,4 @@ license = "MIT"
 keywords = ["terminal", "color", "format", "paint"]
 
 [dependencies]
-term = "*"
+term = "0.4"

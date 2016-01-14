@@ -451,7 +451,7 @@ impl Style {
         macro_rules! try_term {
             ($e:expr) => ({
                 match $e {
-                    Ok(true) => {},
+                    Ok(()) => {},
                     _ => { return Err(Error); },
                 }
             })
