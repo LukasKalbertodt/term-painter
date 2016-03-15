@@ -172,67 +172,58 @@ use std::cell::RefCell;
 pub trait ToStyle : Sized {
     fn to_style(self) -> Style;
 
+    /// Convenience method for modifying the style before it's returned.
+    fn to_mapped_style<F>(self, func: F) -> Style
+        where F: FnOnce(&mut Style)
+    {
+        let mut s = self.to_style();
+        func(&mut s);
+        s
+    }
+
     /// Sets the foreground (text) color.
     fn fg(self, c: Color) -> Style {
-        let mut s = self.to_style();
-        s.fg = c;
-        s
+        self.to_mapped_style(|s| s.fg = c)
     }
 
     /// Sets the background color.
     fn bg(self, c: Color) -> Style {
-        let mut s = self.to_style();
-        s.bg = c;
-        s
+        self.to_mapped_style(|s| s.bg = c)
     }
 
     /// Makes the text bold.
     fn bold(self) -> Style {
-        let mut s = self.to_style();
-        s.set_bold(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_bold(Some(true)))
     }
 
     /// Dim mode.
     fn dim(self) -> Style {
-        let mut s = self.to_style();
-        s.set_dim(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_dim(Some(true)))
     }
 
     /// Underlines the text.
     fn underline(self) -> Style {
-        let mut s = self.to_style();
-        s.set_underline(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_underline(Some(true)))
     }
 
     /// Removes underline-attribute.
     fn not_underline(self) -> Style {
-        let mut s = self.to_style();
-        s.set_underline(Some(false));
-        s
+        self.to_mapped_style(|s| s.set_underline(Some(false)))
     }
 
     /// Underlines the text.
     fn blink(self) -> Style {
-        let mut s = self.to_style();
-        s.set_blink(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_blink(Some(true)))
     }
 
     /// Underlines the text.
     fn reverse(self) -> Style {
-        let mut s = self.to_style();
-        s.set_reverse(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_reverse(Some(true)))
     }
 
     /// Secure mode.
     fn secure(self) -> Style {
-        let mut s = self.to_style();
-        s.set_secure(Some(true));
-        s
+        self.to_mapped_style(|s| s.set_secure(Some(true)))
     }
 
     /// Wraps the style specified in `self` and something of arbitrary type
