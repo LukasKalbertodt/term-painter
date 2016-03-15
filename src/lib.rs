@@ -356,8 +356,6 @@ pub enum Attr {
 impl ToStyle for Attr {
     /// Returns a Style with default values and the `self` attribute enabled.
     fn to_style(self) -> Style {
-        // FIXME: Instead of calling the setter method, the bitfields could
-        // be hardcoded here. Should we trust the optimizer?
         let mut s = Style::default();
         match self {
             Attr::Plain => (),
