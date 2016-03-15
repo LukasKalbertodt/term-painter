@@ -328,9 +328,10 @@ impl ToStyle for Color {
     /// Returns a Style with default values and the `self` color as foreground
     /// color.
     fn to_style(self) -> Style {
-        let mut s = Style::default();
-        s.fg = self;
-        s
+        Style {
+            fg: self,
+            .. Style::default()
+        }
     }
 }
 
