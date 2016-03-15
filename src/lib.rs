@@ -239,15 +239,21 @@ pub trait ToStyle : Sized {
     /// into a `Painted`. When `Painted` is printed it will print the arbitrary
     /// something with the given style.
     fn paint<T>(&self, obj: T) -> Painted<T>
-        where Self: Clone {
-        Painted { style: self.clone().to_style(), obj: obj }
+        where Self: Clone
+    {
+        Painted {
+            style: self.clone().to_style(),
+            obj: obj,
+        }
     }
 
     /// Executes the given function, applying the style information before
     /// calling it and resetting after it finished.
     #[allow(unused_must_use)]
     fn with<F, R>(&self, f: F) -> R
-        where F: FnOnce() -> R, Self: Clone {
+        where F: FnOnce() -> R,
+              Self: Clone
+    {
         // Shorthand for the new style and the style that was active before
         let new = self.clone().to_style();
         let before = CURR_STYLE.with(|curr| curr.borrow().clone());
@@ -362,7 +368,7 @@ impl ToStyle for Attr {
         // be hardcoded here. Should we trust the optimizer?
         let mut s = Style::default();
         match self {
-            Attr::Plain => {},
+            Attr::Plain => (),
             Attr::Bold => s.set_bold(Some(true)),
             Attr::Dim => s.set_dim(Some(true)),
             Attr::Underline => s.set_underline(Some(true)),
@@ -467,13 +473,11 @@ impl Style {
             };
 
             // Apply colors if set.
-            match self.fg.term_constant() {
-                None => {},
-                Some(c) => { try_term!(t.fg(c)); },
+            if let Some(c) = self.fg.term_constant() {
+                try_term!(t.fg(c));
             }
-            match self.bg.term_constant() {
-                None => {},
-                Some(c) => { try_term!(t.bg(c)); },
+            if let Some(c) = self.bg.term_constant() {
+                try_term!(t.bg(c));
             }
 
             // For all attributes: Apply, when set.
@@ -515,10 +519,8 @@ impl Style {
         // The resulting setbit is just an bitwise OR of both input setbits.
         // The resulting valuebit is either the one of y (if y's set bit is
         // set) or the one of x (otherwise).
-        let az = ((ax | ay) & 0b10101010) |
-            (((ay >> 1) & ay | !(ay >> 1) & ax) & 0b01010101);
-        let bz = ((bx | by) & 0b10101010) |
-            (((by >> 1) & by | !(by >> 1) & bx) & 0b01010101);
+        let az = ((ax | ay) & 0b10101010) | (((ay >> 1) & ay | !(ay >> 1) & ax) & 0b01010101);
+        let bz = ((bx | by) & 0b10101010) | (((by >> 1) & by | !(by >> 1) & bx) & 0b01010101);
 
         Style {
             fg: if o.fg == Color::NotSet { self.fg } else { o.fg },
@@ -533,10 +535,12 @@ impl Style {
             let mut tmut = term_opt.borrow_mut();
             match tmut.as_mut() {
                 None => Err(Error),
-                Some(t) => match t.reset() {
-                    Ok(..) => Ok(()),
-                    Err(..) => Err(Error),
-                },
+                Some(t) => {
+                    match t.reset() {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err(Error),
+                    }
+                }
             }
         }));
         self.apply()
