@@ -445,14 +445,9 @@ impl Style {
 
 
     fn apply(&self) -> Result<(), Error> {
-        // Like try!, but also throws when the Result is Ok(false)
+        // Like `try!`, but converts `term`-Error into `fmt::Error`
         macro_rules! try_term {
-            ($e:expr) => ({
-                match $e {
-                    Ok(()) => {},
-                    _ => { return Err(Error); },
-                }
-            })
+            ($e:expr) => { try!($e.map_err(|_| Error)) }
         }
 
         TERM.with(|term_opt| {
