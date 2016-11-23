@@ -51,6 +51,7 @@ There are no guarantees about argument evaluation, but currently it works.
 And honestly, it's unlikely that this way of evaluation ever changes.
 But, for example, if `println!()` would always call `format!()` first and print the resulting `String`, it wouldn't work.
 
+[term]: https://crates.io/crates/term
 
 ## Usage
 Just add `extern crate term_painter;` in your crate root and the dependency in
