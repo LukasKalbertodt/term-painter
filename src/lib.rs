@@ -12,27 +12,31 @@
 //!     println!("{} or {} or {}",
 //!         Red.paint("Red"),
 //!         Bold.paint("Bold"),
-//!         Red.bold().paint("Both!"));
+//!         Red.bold().paint("Both!")
+//!     );
 //! }
 //! ```
 //!
-//! This crate uses `rust-lang/term` to do the formatting. You can of course
-//! use `term` directly, but it's kinda clumsy. Hence this library.
+//! This crate uses [`rust-lang/term`][term] to do the formatting. Of course,
+//! you can use `term` directly, but it's kinda clumsy. Hence this library.
+//!
+//! [term]: https://crates.io/crates/term
 //!
 //!
 //! How to use it
 //! -------------
-//! Formatting works in two steps mainly:
+//! Formatting is done in two steps:
 //!
 //! 1. Creating a style
-//! 2. Use this style to "paint" something and reviece a `Painted` object
+//! 2. Use this style to "paint" something and get a `Painted` object
+//!
 //!
 //! 1. Creating a style
 //! -------------------
 //! To create a style a startpoint is needed: This can either be a startpoint
 //! with an attached modifier (like `Red`: modifies the fg-color) or the
 //! `Plain` startpoint, which does not modify anything.
-//! After that the startpoint can be modified by modifiers like `bold()` or
+//! After that, the startpoint can be modified with modifiers like `bold()` or
 //! `fg()`.
 //!
 //! ```
@@ -45,17 +49,24 @@
 //! fn main() {
 //!     let x = 5;
 //!
-//!    // These two are equivalent
-//!    println!("{} | {}", x, Plain.paint(x));
+//!     // These two are equivalent: nothing is formatted/painted
+//!     println!("{} | {}", x, Plain.paint(x));
 //!
-//!    // These two are equivalent, too
-//!    println!("{} | {}", Red.paint(x), Plain.fg(Red).paint(x));
+//!     // These two are equivalent, too
+//!     println!("{} | {}", Red.paint(x), Plain.fg(Red).paint(x));
 //! }
 //! ```
-//! You can chain as many modifier as you want. Every modifier overrides
+//! You can chain as many modifiers as you want. Every modifier overrides
 //! preceding modifier:
 //!
-//! `println("{}", Plain.fg(Red).fg(Blue).paint("Apple")); // blue, not red`
+//! ```
+//! # use term_painter::Attr::*;
+//! # use term_painter::Color::*;
+//! # use term_painter::ToStyle;
+//!
+//! // blue, not red
+//! println!("{}", Plain.fg(Red).fg(Blue).paint("Apple"));
+//! ```
 //!
 //! 2. Use the style
 //! ----------------
@@ -72,8 +83,8 @@
 //! `Note`: `paint` will consume the passed object. This is no problem when
 //! passing constant literals (like `paint("cheesecake")`) or types that are
 //! `Copy`. Otherwise it could be confusing because just printing should not
-//! consume a variable. To prevent consuming, just pass a borrow to the object
-//! (with `&`). Example:
+//! consume a variable. To prevent consuming, just pass a reference to the
+//! object (with `&`). Example:
 //!
 //! ```
 //! extern crate term_painter;
@@ -84,7 +95,7 @@
 //!
 //! fn main() {
 //!     let non_copy = "cake".to_string();  // String is *not* Copy
-//!     let copy = 27;  // usize/isize *is* Copy
+//!     let copy = 27;  // i32 *is* Copy
 //!
 //!     println!("{}", Plain.paint(&non_copy));
 //!     println!("{}", Plain.paint(&copy));
@@ -93,15 +104,17 @@
 //!
 //!     println!("{}", Plain.paint(non_copy));
 //!     println!("{}", Plain.paint(copy));
-//!     // non_copy was moved into paint, so it not usable anymore...
+//!     // non_copy was moved into `paint`, so it not usable anymore...
 //!     // copy is still usable here...
 //! }
 //! ```
 //!
 //! Another way is to call `with`. `with` takes another function (usually a
 //! closure) and everything that is printed within that closure is formatted
-//! with the given style. It can be chained and used together with `paint`.
-//! Inner calls will overwrite outer calls of `with`.
+//! with the given style. Specifically, `with()` sets the given style,
+//! calls the given function and resets the style afterwards. It can be
+//! chained and used together with `paint()`. Inner calls will overwrite
+//! outer calls of `with`.
 //!
 //! ```
 //! extern crate term_painter;
@@ -130,39 +143,42 @@
 //! ----------
 //! If you don't want to pollute your namespace with `Color` and `Attr` names,
 //! you can use a more qualified name (`Color::Red.paint(..)`) and remove these
-//! `use` statements: `use term_painter::Color::*;` and
-//! `use term_painter::Attr::*;`.
+//! `use` statements:
 //!
-//! And please note that global state is changed when printing a `Painted`
+//! - `use term_painter::Color::*;`
+//! - `use term_painter::Attr::*;`
+//!
+//! Please note that global state is changed when printing a `Painted`
 //! object. This means that some state is set before and reset after printing.
 //! This means that, for example, using this library in `format!` or `write!`
 //! won't work. The color formatting is not stored in the resulting string.
 //! Although Unix terminals do modify color and formatting by printing special
-//! control characters, Windows and others do not. And since this library uses
-//! the plattform independent library `term`. This was a design choice.
+//! control characters, Windows and others do not. This library uses the
+//! plattform independent library `term`, thus saving formatted text in a
+//! string not possible. This was a design choice.
 //!
 //! This crate also assumes that the terminal state is not altered by anything
 //! else. Calling `term` function directly might result in strange behaviour.
 //! This is due to the fact that one can not read the current terminal state.
 //! In order to work like this, this crate needs to track terminal state
 //! itself. However, there shouldn't be any problems when the terminal state
-//! is completely reset in between using those two methods.
+//! is completely reset in between using those two different methods.
 //!
 //! Another possible source of confusion might be multithreading. Terminal
 //! state and handles are hold in thread local variables. If two terminal
 //! handles would reference the same physical terminal, those two threads could
-//! interfere with each other. I have not tested it though.
+//! interfere with each other. I have not tested it, though. Usually, you don't
+//! want to print to the same Terminal in two threads simultanously anyway.
 //!
 //! Functions of `term` sometimes return a `Result` that is `Err` when the
-//! function fails to set state. However, this crate silently ignores those
+//! function fails to set the state. However, this crate silently ignores those
 //! failures. To check the capabilities of the terminal, use `term` directly.
-//!
 //!
 
 extern crate term;
 
 use std::default::Default;
-use std::fmt::{self, Error, Formatter};
+use std::fmt;
 use std::cell::RefCell;
 
 
@@ -240,7 +256,6 @@ pub trait ToStyle : Sized {
 
     /// Executes the given function, applying the style information before
     /// calling it and resetting after it finished.
-    #[allow(unused_must_use)]
     fn with<F, R>(&self, f: F) -> R
         where F: FnOnce() -> R,
               Self: Clone
@@ -250,13 +265,13 @@ pub trait ToStyle : Sized {
         let before = CURR_STYLE.with(|curr| curr.borrow().clone());
 
         // Apply the new style and setting the merged style as CURR_STYLE
-        new.apply();
+        let _ = new.apply();
         CURR_STYLE.with(|curr| *curr.borrow_mut() = before.and(new));
 
         let out = f();
 
         // Revert to the style that was active before and set it as current
-        before.revert_to();
+        let _ = before.revert_to();
         CURR_STYLE.with(|curr| *curr.borrow_mut() = before);
 
         out
@@ -266,9 +281,17 @@ pub trait ToStyle : Sized {
 /// Lists all possible Colors. It implements `ToStyle` so it's possible to call
 /// `ToStyle`'s methods directly on a `Color` variant like:
 ///
-/// `println!("{}", Color::Red.bold().paint("Red and bold"));`
+/// ```
+/// # use term_painter::{Attr, Color, ToStyle};
 ///
-/// Note: Using `Color::NotSet` will *not* reset the color to the default
+/// println!("{}", Color::Red.bold().paint("Red and bold"));
+/// ```
+///
+/// It is not guaranteed that the local terminal supports all of those colors.
+/// As already mentioned in the module documentation, you should use `term`
+/// directly to check the terminal's capabilities.
+///
+/// **Note**: Using `Color::NotSet` will *not* reset the color to the default
 /// terminal color.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
@@ -296,15 +319,15 @@ impl Color {
     /// Returns the associated constant from `term::color::Color`.
     fn term_constant(&self) -> Option<term::color::Color> {
         match *self {
-            Color::NotSet  => None,
-            Color::Black   => Some(term::color::BLACK),
-            Color::Red     => Some(term::color::RED),
-            Color::Green   => Some(term::color::GREEN),
-            Color::Yellow  => Some(term::color::YELLOW),
-            Color::Blue    => Some(term::color::BLUE),
-            Color::Magenta => Some(term::color::MAGENTA),
-            Color::Cyan    => Some(term::color::CYAN),
-            Color::White   => Some(term::color::WHITE),
+            Color::NotSet        => None,
+            Color::Black         => Some(term::color::BLACK),
+            Color::Red           => Some(term::color::RED),
+            Color::Green         => Some(term::color::GREEN),
+            Color::Yellow        => Some(term::color::YELLOW),
+            Color::Blue          => Some(term::color::BLUE),
+            Color::Magenta       => Some(term::color::MAGENTA),
+            Color::Cyan          => Some(term::color::CYAN),
+            Color::White         => Some(term::color::WHITE),
             Color::BrightBlack   => Some(term::color::BRIGHT_BLACK),
             Color::BrightRed     => Some(term::color::BRIGHT_RED),
             Color::BrightGreen   => Some(term::color::BRIGHT_GREEN),
@@ -338,7 +361,15 @@ impl ToStyle for Color {
 /// Lists possible attributes. It implements `ToStyle` so it's possible to call
 /// `ToStyle`'s methods directly on a `Attr` variant like:
 ///
-/// `println!("{}", Attr::Bold.fg(Color::Red).paint("Red and bold"));`
+/// ```
+/// # use term_painter::{Attr, Color, ToStyle};
+///
+/// println!("{}", Attr::Bold.fg(Color::Red).paint("Red and bold"));
+/// ```
+///
+/// It is not guaranteed that the local terminal supports all of those
+/// formatting options. As already mentioned in the module documentation, you
+/// should use `term` directly to check the terminal's capabilities.
 ///
 /// For more information about enum variants, see `term::Attr` Documentation.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -358,7 +389,7 @@ impl ToStyle for Attr {
     fn to_style(self) -> Style {
         let mut s = Style::default();
         match self {
-            Attr::Plain => (),
+            Attr::Plain => {},
             Attr::Bold => s.set_bold(Some(true)),
             Attr::Dim => s.set_dim(Some(true)),
             Attr::Underline => s.set_underline(Some(true)),
@@ -396,10 +427,12 @@ impl Default for Style {
     }
 }
 
-thread_local!(static TERM: RefCell<Option<Box<term::StdoutTerminal>>>
-    = RefCell::new(term::stdout()));
-thread_local!(static CURR_STYLE: RefCell<Style>
-    = RefCell::new(Style::default()));
+thread_local!(
+    static TERM: RefCell<Option<Box<term::StdoutTerminal>>> = RefCell::new(term::stdout())
+);
+thread_local!(
+    static CURR_STYLE: RefCell<Style> = RefCell::new(Style::default())
+);
 
 // Macro to generate getter and setter for all attributes. This hides almost
 // all bit magic in here.
@@ -407,7 +440,7 @@ macro_rules! gen_getter {
     ($getter:ident, $setter:ident, $var:ident, $pos:expr) => {
         pub fn $getter(&self) -> Option<bool> {
             // shift important bits to the right and mask them
-            match (self.$var >> ($pos*2)) & 0b11 {
+            match (self.$var >> ($pos * 2)) & 0b11 {
                 0b10 => Some(false),
                 0b11 => Some(true),
                 _ => None,
@@ -444,16 +477,16 @@ impl Style {
     gen_getter!(get_secure,     set_secure,     reverse_secure, 2);
 
 
-    fn apply(&self) -> Result<(), Error> {
+    fn apply(&self) -> Result<(), fmt::Error> {
         // Like `try!`, but converts `term`-Error into `fmt::Error`
         macro_rules! try_term {
-            ($e:expr) => { try!($e.map_err(|_| Error)) }
+            ($e:expr) => { try!($e.map_err(|_| fmt::Error)) }
         }
 
         TERM.with(|term_opt| {
             let mut tmut = term_opt.borrow_mut();
             let mut t = match tmut.as_mut() {
-                None => return Err(Error),
+                None => return Err(fmt::Error),
                 Some(t) => t,
             };
 
@@ -489,7 +522,7 @@ impl Style {
         })
     }
 
-    // `o` overrides values of `self`
+    /// `o` overrides values of `self`.
     fn and(&self, o: Style) -> Style {
         // Some shortcuts for bitfields.
         let ax = self.bold_dim_underline_blink;
@@ -497,9 +530,11 @@ impl Style {
         let bx = self.reverse_secure;
         let by = o.reverse_secure;
 
-        // The following is equivalent to write
+        // The following is equivalent to
         //     `s.set_attr(o.get_attr().and(self.get_attr()));`
-        // for every attribute. But we can do better with some bit operations.
+        // for every attribute.
+        //
+        // But we can do better with some bit operations.
         // There are two bits for each attribute: The setbit and valuebit.
         // The resulting setbit is just an bitwise OR of both input setbits.
         // The resulting valuebit is either the one of y (if y's set bit is
@@ -515,18 +550,13 @@ impl Style {
         }
     }
 
-    fn revert_to(&self) -> Result<(), Error> {
+    /// Resets the whole terminal and applies this style.
+    fn revert_to(&self) -> Result<(), fmt::Error> {
         try!(TERM.with(|term_opt| {
             let mut tmut = term_opt.borrow_mut();
-            match tmut.as_mut() {
-                None => Err(Error),
-                Some(t) => {
-                    match t.reset() {
-                        Ok(_) => Ok(()),
-                        Err(_) => Err(Error),
-                    }
-                }
-            }
+            tmut.as_mut()
+                .and_then(|t| t.reset().ok())
+                .ok_or(fmt::Error)
         }));
         self.apply()
     }
@@ -551,7 +581,7 @@ pub struct Painted<T> {
 macro_rules! impl_format {
     ($symbol:expr, $fmt:ident) => {
         impl<T: fmt::$fmt> fmt::$fmt for Painted<T> {
-            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
                 self.style.with(|| fmt::$fmt::fmt(&self.obj, f))
             }
         }
