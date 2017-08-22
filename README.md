@@ -49,6 +49,7 @@ There are more *terminal color crates* than stars in the observable universe, th
 - you want full power of what happens (consider using `rust-lang/term` instead), *or*
 - you want to print from multiple threads (consider using [`termcolor`](https://crates.io/crates/termcolor) instead), *or*
 - you want to color/format text you print on something else than stdout (however, `term-painter` might add support for stderr in the future)
+- you want to use a crate with a fancy name (`term-painter` is such a boring name :unamused:)
 
 **You _probably shouldn't_ use this crate, if:**
 - you don't need to support non-ANSI terminals (Only supporting ANSI-formatting gives the author of the lib greater flexibility in designing the API, thus potentially making it easier and more powerful. See [section "Cross Platform"](#cross-platform). Consider using [`ansi-term`](https://crates.io/crates/ansi_term), [`colored`](https://crates.io/crates/colored), [`yansi`](https://crates.io/crates/yansi), ... instead.), *or*
