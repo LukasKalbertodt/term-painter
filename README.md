@@ -6,7 +6,7 @@
 [**Documentation**](https://docs.rs/term-painter/)
 
 `term-painter` is a cross-platform (i.e. also non-ANSI terminals) Rust library for coloring and formatting terminal output.
-It provides easy ways to format various things and uses the crate [`rust-lang/term`][term] to do the actual formatting.
+It provides easy ways to format various things and uses the crate [`rust-lang/term`][term] to do the actual formatting. **Please read ["When (not) to use this crate"](#when-not-to-use-this-crate)**.
 Example:
 
 ``` Rust
