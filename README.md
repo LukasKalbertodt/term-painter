@@ -3,7 +3,7 @@
 [![crates.io version](https://img.shields.io/crates/v/term-painter.svg)](https://crates.io/crates/term-painter)
 [![GitHub license](https://img.shields.io/github/license/LukasKalbertodt/term-painter.svg)]()
 
-[**Documentation**](https://lukaskalbertodt.github.io/term-painter/term_painter/)
+[**Documentation**](https://docs.rs/term-painter/)
 
 `term-painter` is a cross-platform Rust library for coloring and formatting terminal output.
 It provides easy ways to format various things and uses the crate [`rust-lang/term`][term] to do the actual formatting.
