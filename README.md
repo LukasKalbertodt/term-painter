@@ -49,6 +49,7 @@ There are more *terminal color crates* than stars in the observable universe, th
 - you want full power of what happens (consider using `rust-lang/term` instead), *or*
 - you want to print from multiple threads (consider using [`termcolor`](https://crates.io/crates/termcolor) instead), *or*
 - you want to color/format text you print on something else than stdout (however, `term-painter` might add support for stderr in the future)
+- you want an actively developed crate (see ["Status"](#status))
 - you want to use a crate with a fancy name (`term-painter` is such a boring name :unamused:)
 
 **You _probably shouldn't_ use this crate, if:**
@@ -75,17 +76,9 @@ In summary: most terminals support ANSI-coloring, non-ANSI-terminals make the wo
 
 [term]: https://crates.io/crates/term
 
-## Usage
-Just add `extern crate term_painter;` in your crate root and the dependency in
-your `Cargo.toml` file:
+## Status of this crate
 
-```
-[dependencies]
-term-painter = "0.2"
-```
-
-## Collaboration
-Yes please! If you find a bug, want to request a feature or anything else: Please open an issue or create a pull request.
+This crate is not actively developed anymore. The API is likely to stay as it is. I doubt this crate will reach its 1.0 milestone. This doesn't mean that this crate doesn't work! You can still use it, if it fits your needs.
 
 ## Thanks
 I've got some design ideas from [`rust-ansi-term`](https://github.com/ogham/rust-ansi-term).
