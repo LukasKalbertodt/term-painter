@@ -43,7 +43,7 @@ More examples [here (`examples/main.rs`)](https://github.com/LukasKalbertodt/ter
 
 ## When (not) to use this crate
 
-There are more *terminal color crates* than stars in the observable universe, therefore it's a valid question to ask "which one is best"? Unfortunately, there is no clear answer, I think. I'll try to summarize:
+There are more terminal color crates than stars in the observable universe, therefore it's a valid question to ask "which one is best"? Unfortunately, there is no clear answer, I think. 
 
 **_Don't_ use this crate, if:**
 - you want full power of what happens (consider using `rust-lang/term` instead), *or*
