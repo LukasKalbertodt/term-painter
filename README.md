@@ -7,6 +7,9 @@
 
 `term-painter` is a cross-platform (i.e. also non-ANSI terminals) Rust library for coloring and formatting terminal output.
 It provides easy ways to format various things and uses the crate [`rust-lang/term`][term] to do the actual formatting. **Please read ["When (not) to use this crate"](#when-not-to-use-this-crate)**.
+
+**Note**: I created another library for coloring terminal text: [`bunt`](https://crates.io/crates/bunt). I like it much better, so maybe consider using `bunt` instead of `term-painter` :-)
+
 Example:
 
 ``` Rust
@@ -47,7 +50,7 @@ There are more terminal color crates than stars in the observable universe, ther
 
 **_Don't_ use this crate, if:**
 - you want full power of what happens (consider using `rust-lang/term` instead), *or*
-- you want to print from multiple threads (consider using [`termcolor`](https://crates.io/crates/termcolor) instead), *or*
+- you want to print from multiple threads (consider using [`termcolor`](https://crates.io/crates/termcolor) or [`bunt`](https://crates.io/crates/bunt) instead), *or*
 - you want to color/format text you print on something else than stdout (however, `term-painter` might add support for stderr in the future)
 - you want an actively developed crate (see ["Status of this crate"](#status-of-this-crate))
 - you want to use a crate with a fancy name (`term-painter` is such a boring name :unamused:)
