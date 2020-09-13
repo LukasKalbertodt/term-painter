@@ -1,4 +1,4 @@
-# Coloring terminal ouput
+# Coloring terminal output
 [![Build Status](https://img.shields.io/travis/LukasKalbertodt/term-painter/master.svg)](https://travis-ci.org/LukasKalbertodt/term-painter)
 [![crates.io version](https://img.shields.io/crates/v/term-painter.svg)](https://crates.io/crates/term-painter)
 [![GitHub license](https://img.shields.io/github/license/LukasKalbertodt/term-painter.svg)]()
