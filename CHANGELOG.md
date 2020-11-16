@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2020-11-16
+### Breaking change
+- Update `term` to 0.6 (this update contains fixes)
+- Changed `Color::Custom(u16)` to `Color::Custom(u32)`
+- Bump MSRV to 1.36 as part of the update of `term`
+
+## [0.2.4] - 2017-08-22
+This release does not contain any changes. It was just used to update metadata on crates.io.
 
 ## [0.2.3] - 2016-11-23
 ### Added
@@ -54,6 +62,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 *Initial release*
 
 [Unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/LukasKalbertodt/term-painter/compare/0.2.4...0.3.0
+[0.2.4]: https://github.com/LukasKalbertodt/term-painter/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/LukasKalbertodt/term-painter/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/LukasKalbertodt/term-painter/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/LukasKalbertodt/term-painter/compare/0.2.0...0.2.1
