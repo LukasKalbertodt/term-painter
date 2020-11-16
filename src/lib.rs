@@ -480,12 +480,12 @@ impl Style {
     fn apply(&self) -> Result<(), fmt::Error> {
         // Like `try!`, but converts `term`-Error into `fmt::Error`
         macro_rules! try_term {
-            ($e:expr) => { try!($e.map_err(|_| fmt::Error)) }
+            ($e:expr) => { $e.map_err(|_| fmt::Error)? }
         }
 
         TERM.with(|term_opt| {
             let mut tmut = term_opt.borrow_mut();
-            let mut t = match tmut.as_mut() {
+            let t = match tmut.as_mut() {
                 None => return Err(fmt::Error),
                 Some(t) => t,
             };
@@ -552,12 +552,12 @@ impl Style {
 
     /// Resets the whole terminal and applies this style.
     fn revert_to(&self) -> Result<(), fmt::Error> {
-        try!(TERM.with(|term_opt| {
+        TERM.with(|term_opt| {
             let mut tmut = term_opt.borrow_mut();
             tmut.as_mut()
                 .and_then(|t| t.reset().ok())
                 .ok_or(fmt::Error)
-        }));
+        })?;
         self.apply()
     }
 }
