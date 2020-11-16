@@ -312,7 +312,7 @@ pub enum Color {
     BrightMagenta,
     BrightCyan,
     BrightWhite,
-    Custom(u16),
+    Custom(u32),
 }
 
 impl Color {
