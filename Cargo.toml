@@ -12,8 +12,5 @@ license = "MIT/Apache-2.0"
 keywords = ["terminal", "color", "format", "paint"]
 categories = ["command-line-interface"]
 
-[badges]
-travis-ci = { repository = "LukasKalbertodt/term-painter" }
-
 [dependencies]
 term = "0.6"
